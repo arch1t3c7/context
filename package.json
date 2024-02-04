@@ -1,0 +1,37 @@
+{
+    "name": "@arch/provider",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "author": {
+        "name": "Calvin Mann",
+        "email": "calvinmann@gmail.com"
+    },
+    "scripts": {
+        "build": "tsc --build .",
+        "test": "jest",
+        "lint": "eslint ."
+    },
+    "dependencies": {
+        "lodash.merge": "^4.6.2",
+        "object-hash": "^3.0.0"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.23.9",
+        "@babel/preset-env": "^7.23.9",
+        "@babel/preset-typescript": "^7.23.3",
+        "@jest/globals": "^29.7.0",
+        "@types/jest": "^29.5.12",
+        "@types/lodash.merge": "^4.6.9",
+        "@types/object-hash": "^3.0.6",
+        "@typescript-eslint/eslint-plugin": "^6.20.0",
+        "@typescript-eslint/parser": "^6.20.0",
+        "babel-jest": "^29.7.0",
+        "eslint": "^8.56.0",
+        "jest": "^29.7.0",
+        "jest-environment-jsdom": "^29.7.0",
+        "ts-jest": "^29.1.2",
+        "ts-node": "^10.9.2",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.3.3"
+    }
+}
