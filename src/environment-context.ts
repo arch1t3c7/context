@@ -1,7 +1,8 @@
 import { FeatureContext } from './index';
-import type { ProviderLoader, Providers, Features, ProviderConfig, StringKeys, DefaultProviders } from './type';
+import { ServiceContext } from './service-context';
+import type { ProviderLoader, Providers, Features, ProviderConfig, StringKeys, DefaultProviders, Services } from './type';
 
-export abstract class EnvironmentContext<TProviders extends Providers> {
+export abstract class EnvironmentContext<TProviders extends Providers, TServices extends Services | void = void> {
     /** The base config for the environment */
     config: ProviderConfig<TProviders> | void;
 
@@ -11,11 +12,25 @@ export abstract class EnvironmentContext<TProviders extends Providers> {
     /** The default providers for features */
     providers: TProviders;
 
+    /** The available services */
+    serviceContext?: TServices extends Services ?
+        ServiceContext<TServices> :
+        undefined;
+
     /** Creates a new environment context */
-    constructor(config: ProviderConfig<TProviders>, providers: TProviders, defaultProviders: DefaultProviders<TProviders>) {
+    constructor(
+        config: ProviderConfig<TProviders>,
+        providers: TProviders,
+        defaultProviders?: DefaultProviders<TProviders>,
+        serviceContext?: TServices extends Services ?
+            ServiceContext<TServices> :
+            undefined,
+    ) {
         this.config = config;
         this.providers = providers;
-        this.defaultProviders = defaultProviders;
+        this.defaultProviders = defaultProviders ||
+            {};
+        this.serviceContext = serviceContext;
     }
 
     /** The provider module loader */
@@ -23,7 +38,7 @@ export abstract class EnvironmentContext<TProviders extends Providers> {
 
     /** Returns the base configuration for the provider */
     providerConfig(
-        context: FeatureContext<TProviders>,
+        context: FeatureContext<TProviders, TServices>,
         provider: StringKeys<TProviders>,
         feature: StringKeys<Features<TProviders>>,
     ): unknown | Promise<unknown> {
@@ -33,7 +48,7 @@ export abstract class EnvironmentContext<TProviders extends Providers> {
 
     /** Returns the base configuration for the feature */
     featureConfig(
-        context: FeatureContext<TProviders>,
+        context: FeatureContext<TProviders, TServices>,
         provider: StringKeys<TProviders>,
         feature: StringKeys<Features<TProviders>>,
     ): unknown | Promise<unknown> {

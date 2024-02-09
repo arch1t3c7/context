@@ -2,21 +2,33 @@ import { FeatureContext } from './feature-context';
 import { Provider } from './provider';
 import { Cache } from './cache/index';
 import { EnvironmentContext } from './environment-context';
-import type { ProviderFeatures, ProviderType, Providers, StringKeys } from './type';
+import type { ProviderFeatures, ProviderType, Providers, Services, StringKeys } from './type';
 import { UserError } from './error/user';
 
-export class ProviderContext<TProviders extends Providers> {
+export class ProviderContext<TProviders extends Providers, TServices extends Services | void = void> {
     /** The cache to hold the cached providers */
     #cache = new Cache<string, Provider<ProviderFeatures, unknown>>();
 
     /** The environment the providers are being managed by */
-    readonly environmentContext: EnvironmentContext<TProviders>;
+    readonly environmentContext: EnvironmentContext<TProviders, TServices>;
 
     /* c8 ignore start */
+
+    /** Alias for environmentContext */
+    get environment() {
+        return this.environmentContext;
+    }
+
     /** Alias for environmentContent.providers */
-    get providers() {
+    get provider() {
         return this.environmentContext.providers;
     }
+
+    /** Alias for environmentContext.services */
+    get service() {
+        return this.environmentContext.serviceContext?.services || {};
+    }
+
     /* c8 ignore end */
 
     /** Creates a new provider context which will be used to manage loading and caching of providers */
@@ -30,7 +42,7 @@ export class ProviderContext<TProviders extends Providers> {
      * @param config THe configuration to initialize the provider with
      * @returns The loaded provider
      */
-    async load<TProviderConfig, KProvider extends StringKeys<TProviders>>(providerKey: KProvider, config: TProviderConfig, context: FeatureContext<TProviders>) {
+    async load<TProviderConfig, KProvider extends StringKeys<TProviders>>(providerKey: KProvider, config: TProviderConfig, context: FeatureContext<TProviders, TServices>) {
         // Load the provider module
         const providerFactory = await this.environmentContext.load<ProviderType<TProviders, KProvider>>(providerKey);
         if (providerFactory === undefined) {

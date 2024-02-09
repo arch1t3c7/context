@@ -2,6 +2,7 @@
 import type { Object } from 'ts-toolbelt';
 import type { FeatureContext } from './feature-context';
 import type { Provider } from './provider';
+import { Service } from './service';
 
 /** Gets tuple with all the featurs for a given provider */
 type ProviderFeaturesTuple<TProvider extends Provider<any, any>> = TProvider[`features`][string];
@@ -20,7 +21,12 @@ export type Providers = {
 
 /** The features initialization type. This gives way to Features once TProviders is available */
 export type ProviderFeatures = {
-    [name: string]: (this: FeatureContext<any>, feature: string, config: unknown) => Promise<unknown>;
+    [name: string]: (this: FeatureContext<any, any>, feature: string, config: unknown) => Promise<unknown>;
+}
+
+/** The structure of the provider factory collection  */
+export type Services = {
+    [name: string]: Service<any>;
 }
 
 /** A utility to extract the config type the provider requires */
@@ -60,9 +66,11 @@ export type ProviderConfig<TProviders extends Providers> = {
 }
 
 /** Provides a way to tie together providers and the default config */
-export type DefaultProviders<TProviders extends Providers> = Record<StringKeys<Features<TProviders>>, StringKeys<TProviders>>;
+export type DefaultProviders<TProviders extends Providers> = Partial<Record<StringKeys<Features<TProviders>>, StringKeys<TProviders>>>;
 
-export type ProviderLoader<TProvider> = (context: FeatureContext<any>, config: any) => Promise<TProvider>;
+export type ProviderLoader<TProvider> = (context: FeatureContext<any, any>, config: any) => Promise<TProvider>;
+
+export type ServiceEventHandler<TEventContext, TEvents = never> = (this: Service<TEventContext, TEvents>, requestContext?: TEventContext) => void;
 
 export type AnyFunc = (...args: any[]) => any;
 
@@ -77,9 +85,3 @@ export type DeepPartial<T> = T extends object ? {
 } : T;
 
 export type StringKeys<T> = Extract<keyof T, string>;
-
-
-
-
-
-

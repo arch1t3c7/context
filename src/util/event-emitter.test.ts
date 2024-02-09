@@ -22,25 +22,60 @@ describe(`EventEmitter`, () => {
         });
     });
 
+    describe(`once`, () => {
+        it(`should be a function`, () => {
+            expect(typeof eventEmitter.once).toBe(`function`);
+        });
+        it(`should return the number of times the function has been registered`, () => {
+            const handler = () => undefined;
+
+            expect(eventEmitter.once(`test1`, handler)).toBe(1);
+            expect(eventEmitter.once(`test2`, handler)).toBe(1);
+            expect(eventEmitter.once(`test1`, handler)).toBe(2);
+            expect(eventEmitter.once(`test2`, handler)).toBe(2);
+        });
+        it(`should only execute the handler once`, () => {
+            const handler = jest.fn();
+
+            eventEmitter.once(`test`, handler);
+
+            eventEmitter.emit(`test`);
+            eventEmitter.emit(`test`);
+            eventEmitter.emit(`test`);
+            eventEmitter.emit(`test`);
+
+            expect(handler).toBeCalledTimes(1);
+        });
+        it(`should only remove the handle once executed`, () => {
+            const handler = () => undefined;
+
+            eventEmitter.once(`test`, handler);
+
+            eventEmitter.emit(`test`);
+
+            expect(eventEmitter.off(`test`, handler)).toBe(-1);
+        });
+    });
+
     describe(`off`, () => {
         it(`should be a function`, () => {
             expect(typeof eventEmitter.on).toBe(`function`);
         });
 
-        it(`should return false if the handler has never been previously registered`, () => {
+        it(`should return -1 if the handler has never been previously registered`, () => {
             const handler1 = () => undefined;
             const handler2 = () => undefined;
 
-            expect(eventEmitter.off(`test`, handler1)).toBe(false);
+            expect(eventEmitter.off(`test`, handler1)).toBe(-1);
             eventEmitter.on(`test`, handler1);
-            expect(eventEmitter.off(`test`, handler2)).toBe(false);
+            expect(eventEmitter.off(`test`, handler2)).toBe(-1);
         });
 
-        it(`should return true if the handler has been previously registered`, () => {
+        it(`should return the updated handler count if the handler has been previously registered`, () => {
             const handler = () => undefined;
 
             eventEmitter.on(`test`, handler);
-            expect(eventEmitter.off(`test`, handler)).toBe(true);
+            expect(eventEmitter.off(`test`, handler)).toBe(0);
         });
     });
 
@@ -57,8 +92,8 @@ describe(`EventEmitter`, () => {
 
             eventEmitter.clear(`test2`);
 
-            expect(eventEmitter.off(`test1`, handler)).toBe(true);
-            expect(eventEmitter.off(`test2`, handler)).toBe(false); 
+            expect(eventEmitter.off(`test1`, handler)).toBe(0);
+            expect(eventEmitter.off(`test2`, handler)).toBe(-1);
         });
 
         it(`should return the number of handlers cleared`, () => {

@@ -1,24 +1,28 @@
 import merge from 'lodash.merge';
 import { ProviderContext } from './provider-context';
-import type { Disposable, Providers, FeatureShortcuts, StringKeys, Features, FeatureType, ProviderTypeConfig } from './type';
+import type { Disposable, Providers, FeatureShortcuts, StringKeys, Features, FeatureType, ProviderTypeConfig, Services } from './type';
 import { UserError } from './error/user';
 
-export class FeatureContext<TProviders extends Providers> {
-    providerContext: ProviderContext<TProviders>;
+export class FeatureContext<TProviders extends Providers, TServices extends Services | void = void> {
+    providerContext: ProviderContext<TProviders, TServices>;
 
     feature: FeatureShortcuts<TProviders>;
 
     /* c8 ignore start */
-    get environmentContext() {
-        return this.providerContext.environmentContext;
+    get environment() {
+        return this.providerContext.environment;
     }
 
     get providers() {
-        return this.providerContext.providers;
+        return this.providerContext.provider;
+    }
+
+    get services() {
+        return this.providerContext.service;
     }
     /* c8 ignore end */
 
-    constructor(providerContext: ProviderContext<TProviders>) {
+    constructor(providerContext: ProviderContext<TProviders, TServices>) {
         this.providerContext = providerContext;
 
         const self = this;
@@ -60,7 +64,7 @@ export class FeatureContext<TProviders extends Providers> {
     ): Promise<FeatureType<TProviders, KFeature> & Disposable> {
         if (provider === undefined) {
             // Get the default
-            provider = this.environmentContext.defaultProviders[feature] as KProvider;
+            provider = this.environment.defaultProviders[feature] as KProvider;
         }
 
         if (provider === undefined) {
@@ -68,17 +72,17 @@ export class FeatureContext<TProviders extends Providers> {
                 detail: `Default providers may be added to the environment context on initialization ` +
                     `through the "defaultProviders" parameter of the constructor`,
                 feature,
-                defaultProviders: this.environmentContext.defaultProviders,
+                defaultProviders: this.environment.defaultProviders,
             });
         }
 
         // Initialize provider
-        const loadedProviderConfig = await this.environmentContext.providerConfig(this, provider, feature);
+        const loadedProviderConfig = await this.environment.providerConfig(this, provider, feature);
         const providerConfig = this.combineProviderConfig(loadedProviderConfig, suppliedProviderConfig);
         const prov = await this.providerContext.load(provider, providerConfig, this);
 
         // Initialize feature
-        const featureConfig = await this.environmentContext.featureConfig(this, provider, feature);
+        const featureConfig = await this.environment.featureConfig(this, provider, feature);
         const combined = this.combineFeatureConfig(featureConfig, config);
         const feat = await prov.feature(this, feature, combined);
 

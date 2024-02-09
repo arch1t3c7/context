@@ -50,6 +50,12 @@ describe(`EnvironmentContext`, () => {
 
             expect(instance.defaultProviders).toEqual({ foo: `bar` });
         });
+
+        it(`should set defaultProviders to an empty object when not supplied`, () => {
+            const instance = new TestContext(config, providers);
+
+            expect(instance.defaultProviders).toEqual(expect.any(Object));
+        });
     })
 
     describe(`instance`, () => {        
