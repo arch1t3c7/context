@@ -1,51 +1,54 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
 import { EnvironmentContext } from './environment-context';
 
-type TestConfig = {
-    provider: {
-        bar: {};
-    };
-    feature: {
-        foo: {};
-    };
-}
-
-type FeatureMap = {
-    foo: [{}, {}];
-}
-
 type ProviderMap = {
-    bar: [() => any, {}];
+    bar: () => any;
 }
 
-class TestContext extends EnvironmentContext<ProviderMap, FeatureMap, TestConfig> {
+class TestContext extends EnvironmentContext<ProviderMap> {
     load = jest.fn();
     module = jest.fn();
     asyncModule = jest.fn(() => Promise.resolve()) as any;
 }
 
 describe(`EnvironmentContext`, () => {
-    const config = {
+    let config: {
         provider: {
-            bar: { },
-        },
+            bar: undefined;
+        };
         feature: {
-            foo: { },
+            foo: undefined;
         }
     };
+    let providers: {
+        bar: () => Promise<{}>
+    };
+
+    beforeEach(() => {
+        config = {
+            provider: {
+                bar: undefined,
+            },
+            feature: {
+                foo: undefined,
+            }
+        };
+
+        providers = {
+            bar: () => Promise.resolve({ })
+        };
+    });
+
     describe(`constructor`, () => {
         it(`should define the config property`, () => {
-            const provider: Record<keyof FeatureMap, keyof ProviderMap> = { foo: `bar` };
-
-            const instance = new TestContext(config, provider);
+            const instance = new TestContext(config, providers, { foo: `bar` });
             expect(instance.config).toBe(config);
         });
 
-        it(`should define the provider property`, () => {
-            const provider: Record<keyof FeatureMap, keyof ProviderMap> = { foo: `bar` };
+        it(`should define the defaultProviders property`, () => {
+            const instance = new TestContext(config, providers, { foo: `bar` });
 
-            const instance = new TestContext(config, provider);
-            expect(instance.provider).toEqual({ foo: `bar` });
+            expect(instance.defaultProviders).toEqual({ foo: `bar` });
         });
     })
 
@@ -53,7 +56,7 @@ describe(`EnvironmentContext`, () => {
         let instance: TestContext;
 
         beforeEach(() => {
-            instance = new TestContext(config);
+            instance = new TestContext(config, providers, { foo: `bar` });
         })
 
         describe(`providerConfig`, () => {

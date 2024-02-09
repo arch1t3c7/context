@@ -1,29 +1,46 @@
 import merge from 'lodash.merge';
 import { ProviderContext } from './provider-context';
-import type { FeatureMap, ProviderConfig, ProviderMap, Disposable, AnyFunc, FeatureShortcuts } from './type';
+import type { Disposable, Providers, FeatureShortcuts, StringKeys, Features, FeatureType, ProviderTypeConfig } from './type';
+import { UserError } from './error/user';
 
-export class FeatureContext<
-    TProviderMap extends ProviderMap<TFeatureMap>,
-    TFeatureMap extends FeatureMap,
-    TEnvironmentConfig extends ProviderConfig<TProviderMap, TFeatureMap> | void
-> {
-    providerContext: ProviderContext<TProviderMap, TFeatureMap, TEnvironmentConfig>;
+export class FeatureContext<TProviders extends Providers> {
+    providerContext: ProviderContext<TProviders>;
 
+    feature: FeatureShortcuts<TProviders>;
+
+    /* c8 ignore start */
     get environmentContext() {
         return this.providerContext.environmentContext;
     }
 
-    constructor(providerContext: ProviderContext<TProviderMap, TFeatureMap, TEnvironmentConfig>) {
+    get providers() {
+        return this.providerContext.providers;
+    }
+    /* c8 ignore end */
+
+    constructor(providerContext: ProviderContext<TProviders>) {
         this.providerContext = providerContext;
 
-        for (const key of Object.keys(this.environmentContext.provider)) {
-            (this.feature[key] as AnyFunc) = (config: unknown, provider: keyof TProviderMap, providerConfig: unknown) => {
-                return this.load(key, config, provider, providerConfig);
-            };
-        }
+        const self = this;
+        this.feature = new Proxy<FeatureShortcuts<TProviders>>({} as FeatureShortcuts<TProviders>, {
+            get(_, feature: StringKeys<Features<TProviders>>) {
+                /* c8 ignore start */
+                if (typeof feature !== `string`) {
+                    return undefined;
+                }
+                /* c8 ignore end */
+                return function <KProvider extends StringKeys<TProviders> = StringKeys<TProviders>>(
+                    config: unknown,
+                    provider?: KProvider,
+                    providerConfig?: KProvider extends StringKeys<TProviders> ?
+                        ProviderTypeConfig<TProviders, KProvider> :
+                        never,
+                ) {
+                    return self.load(feature, config, provider, provider ? providerConfig : undefined);
+                };
+            }
+        });
     }
-
-    feature = {} as FeatureShortcuts<TProviderMap, TFeatureMap, keyof TProviderMap>;
 
     protected combineProviderConfig<TObject, TSource>(config1: TObject, config2: TSource) {
         return merge({}, config1, config2);
@@ -33,26 +50,36 @@ export class FeatureContext<
         return merge({}, config1, config2);
     }
 
-    async load<T extends keyof TFeatureMap>(feature: T, config: unknown, provider?: keyof TProviderMap, suppliedProviderConfig?: unknown): Promise<TFeatureMap[T] & Disposable> {
-        // TODO: Add type limit to say provider config may only be supplied when provider is supplied
-
+    async load<KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
+        feature: KFeature,
+        config: unknown,
+        provider?: KProvider,
+        suppliedProviderConfig?: KProvider extends StringKeys<TProviders> ?
+            ProviderTypeConfig<TProviders, KProvider> :
+            never,            
+    ): Promise<FeatureType<TProviders, KFeature> & Disposable> {
         if (provider === undefined) {
             // Get the default
-            provider = this.environmentContext.provider[feature];
+            provider = this.environmentContext.defaultProviders[feature] as KProvider;
         }
 
         if (provider === undefined) {
-            throw new Error(`No provider supplied, and no default provider defined for feature "${String(feature)}"`);
+            throw new ProviderNoDefaultError(`No provider supplied, and no default provider defined for feature "${String(feature)}"`, {
+                detail: `Default providers may be added to the environment context on initialization ` +
+                    `through the "defaultProviders" parameter of the constructor`,
+                feature,
+                defaultProviders: this.environmentContext.defaultProviders,
+            });
         }
 
-        // Get the loaded config
+        // Initialize provider
         const loadedProviderConfig = await this.environmentContext.providerConfig(this, provider, feature);
         const providerConfig = this.combineProviderConfig(loadedProviderConfig, suppliedProviderConfig);
         const prov = await this.providerContext.load(provider, providerConfig, this);
 
+        // Initialize feature
         const featureConfig = await this.environmentContext.featureConfig(this, provider, feature);
         const combined = this.combineFeatureConfig(featureConfig, config);
-
         const feat = await prov.feature(this, feature, combined);
 
         const dispose = () => {
@@ -76,6 +103,7 @@ export class FeatureContext<
             }
         };
 
+        // Perform the initial hold
         this.providerContext.hold(prov);
 
         return {
@@ -87,6 +115,8 @@ export class FeatureContext<
     }
 }
 
-export type FeatureFactory<TFeatureMap extends FeatureMap, TFeatureContext> = {
-    [k in keyof TFeatureMap]?: (context: TFeatureContext, config: TFeatureMap[k][1], providerConfig?: unknown) => Promise<TFeatureMap[k][0]>;
+export class ProviderNoDefaultError extends UserError {
+    constructor(message: string, meta: object) {
+        super(message, meta, `PROVIDER_NO_DEFAULT`);
+    }
 }

@@ -4,40 +4,62 @@ import { EnvironmentContext } from './environment-context';
 import { ProviderLoader } from '.';
 import { Cachable } from './cache/cache-item';
 
-type FeatureMap = {
-    foo: [{}, {}];
-}
-
 type ProviderMap = {
-    bar: [() => any, {}];
+    bar: () => Promise<any>;
 }
 
-class TestContext extends EnvironmentContext<ProviderMap, FeatureMap, void> {
+class TestContext extends EnvironmentContext<ProviderMap> {
     load = jest.fn();
     module = jest.fn();
     asyncModule = jest.fn(() => Promise.resolve()) as any;
 }
 
 describe(`ProviderContext`, () => {
-    let factory: ProviderLoader<ProviderMap, FeatureMap, void, void>;
+    let factory: ProviderLoader<ProviderMap[`bar`]>;
     let environmentContext: TestContext;
+
+    let config: {
+        provider: {
+            bar: undefined;
+        };
+        feature: {
+            foo: undefined;
+        }
+    };
+    let providers: {
+        bar: () => Promise<{}>
+    };
 
     beforeEach(() => {
         factory = jest.fn();
-        environmentContext = new TestContext();
+
+        config = {
+            provider: {
+                bar: undefined,
+            },
+            feature: {
+                foo: undefined,
+            }
+        };
+
+        providers = {
+            bar: () => Promise.resolve({ })
+        };
+
+        environmentContext = new TestContext(config, providers, { foo: `bar` });
         environmentContext.load.mockReturnValue(factory);
     });
 
     describe(`constructor`, () => {
         it(`should initialize the environment context property`, () => {
-            const instance = new ProviderContext<ProviderMap, FeatureMap, void>(environmentContext);
+            const instance = new ProviderContext<ProviderMap>(environmentContext);
 
             expect(instance.environmentContext).toBe(environmentContext);
         });
     });
 
     describe(`instance`, () => {
-        let instance: ProviderContext<ProviderMap, FeatureMap, void>;
+        let instance: ProviderContext<ProviderMap>;
 
         beforeEach(() => {
             instance = new ProviderContext(environmentContext);

@@ -4,15 +4,11 @@ import { EnvironmentContext } from './environment-context';
 import { ProviderContext } from './provider-context';
 import { Provider } from './provider';
 
-type FeatureMap = {
-    foo: [{}, {}];
-}
-
 type ProviderMap = {
-    bar: [() => any, {}];
+    bar: () => any;
 }
 
-class TestEnvironmentContext extends EnvironmentContext<ProviderMap, FeatureMap, void> {
+class TestEnvironmentContext extends EnvironmentContext<ProviderMap> {
     load = jest.fn();
     module = jest.fn();
     asyncModule = jest.fn(() => Promise.resolve()) as any;
@@ -20,7 +16,7 @@ class TestEnvironmentContext extends EnvironmentContext<ProviderMap, FeatureMap,
     provider = { foo: `bar` as const }
 }
 
-class TestProvider extends Provider<any, any, any> {
+class TestProvider extends Provider<any> {
     feature = jest.fn();
     cachePolicies = jest.fn(() => []);
 }
@@ -34,26 +30,54 @@ if (!Symbol.asyncDispose) {
 
 describe(`FeatureContext`, () => {
     let environmentContext: TestEnvironmentContext;
-    let providerContext: ProviderContext<ProviderMap, FeatureMap, void>;
+    let providerContext: ProviderContext<ProviderMap>;
     let provider: TestProvider;
 
+    let config: {
+        provider: {
+            bar: undefined;
+        };
+        feature: {
+            foo: undefined;
+        }
+    };
+    let providers: {
+        bar: () => Promise<any>
+    };
+
     beforeEach(() => {
-        environmentContext = new TestEnvironmentContext();
-        providerContext = new ProviderContext<ProviderMap, FeatureMap, void>(environmentContext);
+        config = {
+            provider: {
+                bar: undefined,
+            },
+            feature: {
+                foo: undefined,
+            }
+        };
+
+        providers = {
+            bar: () => Promise.resolve({ })
+        };
+    });
+
+    beforeEach(() => {
+        environmentContext = new TestEnvironmentContext(config, providers, { foo: `bar` });
+        providerContext = new ProviderContext<ProviderMap>(environmentContext);
         provider = new TestProvider(`test`, undefined);
-        providerContext.load = jest.fn(() => Promise.resolve(provider));
+
+        providerContext.load = jest.fn(() => Promise.resolve(provider)) as any;
     });
 
     describe(`constructor`, () => {
         it(`should initialize the providerContext property`, () => {
-            const instance = new FeatureContext<ProviderMap, FeatureMap, void>(providerContext);
+            const instance = new FeatureContext<ProviderMap>(providerContext);
             
             expect(instance.providerContext).toBe(providerContext);
         });
     });
 
     describe(`instance`, () => {
-        let instance: FeatureContext<ProviderMap, FeatureMap, void>;
+        let instance: FeatureContext<ProviderMap>;
 
         beforeEach(() => {
             instance = new FeatureContext(providerContext);
@@ -69,7 +93,7 @@ describe(`FeatureContext`, () => {
                 const featureConfig = Symbol(`feature-config`);
                 const providerConfig = Symbol(`provider-config`);
 
-                instance.feature.foo(featureConfig, `bar`, providerConfig);
+                instance.feature.foo(featureConfig, `bar`, providerConfig as any);
 
                 expect(instance.load).toBeCalledWith(`foo`, featureConfig, `bar`, providerConfig);
             })
@@ -105,7 +129,7 @@ describe(`FeatureContext`, () => {
                 const suppliedConfig = { bar: Symbol(`bar`) };
 
                 environmentContext.providerConfig = jest.fn(() => envConfig);
-                await instance.load(`foo`, envConfig, `bar`, suppliedConfig);
+                await instance.load(`foo`, envConfig, `bar`, suppliedConfig as any);
 
                 expect(providerContext.load).toBeCalledWith(`bar`, {
                     ...envConfig,

@@ -1,3 +1,4 @@
+import { ProgramError } from '../error/program';
 import { EventEmitter } from './event-emitter';
 
 export enum HoldableEvent {
@@ -27,9 +28,15 @@ export class Holdable<THeld, TEvent = never> extends EventEmitter<TEvent | Holda
         this.#count--;
 
         if (this.count < 0) {
-            throw new Error(`Holdable error. Released too many timed`);
+            throw new HoldableCountMismatchError(`Holdable error. Released too many timed`);
         }
 
         this.emit(HoldableEvent.released, this.count);
+    }
+}
+
+export class HoldableCountMismatchError extends ProgramError {
+    constructor(message: string) {
+        super(message, undefined, `HOLDABLE_COUNT_MISMATCH`);
     }
 }

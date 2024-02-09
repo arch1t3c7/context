@@ -1,34 +1,42 @@
 import { FeatureContext } from './index';
-import type { FeatureMap, ProviderConfig, ProviderMap, ProviderLoader } from './type';
+import type { ProviderLoader, Providers, Features, ProviderConfig, StringKeys, DefaultProviders } from './type';
 
-export abstract class EnvironmentContext<
-    TProviderMap extends ProviderMap<TFeatureMap>,
-    TFeatureMap extends FeatureMap,
-    TEnvironmentConfig extends ProviderConfig<TProviderMap, TFeatureMap> | void,
-> {
+export abstract class EnvironmentContext<TProviders extends Providers> {
     /** The base config for the environment */
-    config: TEnvironmentConfig;
+    config: ProviderConfig<TProviders> | void;
+
+    /** The default provider for the features */
+    defaultProviders: DefaultProviders<TProviders>;
 
     /** The default providers for features */
-    provider = { } as Record<keyof TFeatureMap, keyof TProviderMap>;
+    providers: TProviders;
 
-    constructor(config: TEnvironmentConfig, provider?: Record<keyof FeatureMap, keyof TProviderMap>) {
+    /** Creates a new environment context */
+    constructor(config: ProviderConfig<TProviders>, providers: TProviders, defaultProviders: DefaultProviders<TProviders>) {
         this.config = config;
-        Object.assign(this.provider, provider);
+        this.providers = providers;
+        this.defaultProviders = defaultProviders;
     }
 
     /** The provider module loader */
-    abstract load<TProviderConfig>(provider: keyof TProviderMap): Promise<ProviderLoader<TProviderMap, TFeatureMap, TProviderConfig, TEnvironmentConfig>>;
+    abstract load<TProvider>(provider: StringKeys<TProviders>): Promise<ProviderLoader<TProvider>>;
 
     /** Returns the base configuration for the provider */
-    providerConfig(context: FeatureContext<TProviderMap, TFeatureMap, TEnvironmentConfig>, provider: keyof TProviderMap, feature: keyof TFeatureMap): unknown | Promise<unknown> {
+    providerConfig(
+        context: FeatureContext<TProviders>,
+        provider: StringKeys<TProviders>,
+        feature: StringKeys<Features<TProviders>>,
+    ): unknown | Promise<unknown> {
         // Return the default provider config for the environment
         return this.config?.provider?.[provider];
     }
 
     /** Returns the base configuration for the feature */
-    featureConfig(context: FeatureContext<TProviderMap, TFeatureMap, TEnvironmentConfig>, provider: keyof TProviderMap, feature: keyof TFeatureMap): unknown | Promise<unknown> {
-        // Return the default feature config for the environment
+    featureConfig(
+        context: FeatureContext<TProviders>,
+        provider: StringKeys<TProviders>,
+        feature: StringKeys<Features<TProviders>>,
+    ): unknown | Promise<unknown> {
         return this.config?.feature?.[feature];
     }
 

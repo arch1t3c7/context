@@ -1,17 +1,19 @@
 import hash from 'object-hash';
-import { FeatureMap } from './type';
+import { ProviderFeatures } from './type';
 import { Cachable } from './cache/cache-item';
 import { CachePolicy } from './cache/index';
 
-export abstract class Provider<TFeatureMap extends FeatureMap, TFeatureContext = unknown, TConfig = unknown> implements Cachable<string> {
+export abstract class Provider<TFeatures extends ProviderFeatures, TConfig = void> implements Cachable<string> {
     readonly name: string;
     readonly config: TConfig;
+    readonly features: TFeatures;
     readonly cacheKey: string;
 
-    constructor(name: string, config: TConfig) {
-        this.name = name;
+    constructor(features: TFeatures, config: TConfig) {
+        this.name = this.constructor.name;
         this.config = config;
         this.cacheKey = this.generateCacheKey();
+        this.features = features;
     }
 
     /**
@@ -21,7 +23,14 @@ export abstract class Provider<TFeatureMap extends FeatureMap, TFeatureContext =
      * @param config The feature config to supply to the feature factory
      * @returns The loaded feature
      */
-    abstract feature<TFeature extends keyof TFeatureMap>(context: TFeatureContext, feature: TFeature, config: TFeatureMap[TFeature][1]): Promise<TFeatureMap[TFeature][0]>;
+    // abstract feature<TFeatureContext, TFeature extends keyof TFeatureMap>(context: TFeatureContext, feature: TFeature, config: TFeatureMap[TFeature][1]): Promise<TFeatureMap[TFeature][0]>;
+    abstract feature<
+        TFeature extends keyof TFeatures
+    >(
+        context: Parameters<TFeatures[TFeature]>[1],
+        feature: TFeature,
+        config: Parameters<TFeatures[TFeature]>[2]
+    ): Promise<ReturnType<TFeatures[TFeature]>>;
 
     /** Returns the policies for the provider. These should be static as they will be retrieved once per unique provider name */
     abstract cachePolicies(): CachePolicy<string, unknown>[];
