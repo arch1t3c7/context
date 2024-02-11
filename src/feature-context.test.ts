@@ -139,7 +139,7 @@ describe(`FeatureContext`, () => {
                 const envConfig = { foo: Symbol(`foo`) };
                 const suppliedConfig = { bar: Symbol(`bar`) };
 
-                environmentContext.providerConfig = jest.fn(() => envConfig);
+                environmentContext.providerConfig = jest.fn(() => envConfig) as any;
                 await instance.load(`foo`, envConfig, `bar`, suppliedConfig as any);
 
                 expect(providerContext.load).toBeCalledWith(`bar`, {

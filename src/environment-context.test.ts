@@ -117,7 +117,7 @@ describe(`EnvironmentContext`, () => {
                 expect(typeof instance.serviceConfig).toBe(`function`);
             });
             it(`should return the config section for the service`, () => {
-                const conf = instance.serviceConfig(undefined!, `baz`) as any;
+                const conf = instance.serviceConfig(`baz`) as any;
                 expect(conf).toBe(config.service.baz);
             });
         });

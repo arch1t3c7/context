@@ -1,6 +1,6 @@
 import { FeatureContext } from './feature-context.js';
 import { ServiceContext } from './service-context.js';
-import type { Providers, Features, ProviderConfig, StringKeys, DefaultProviders, Services } from './type.js';
+import type { Providers, Features, ProviderConfig, StringKeys, DefaultProviders, Services, FeatureTypeConfig, ProviderTypeConfig } from './type.js';
 
 export class EnvironmentContext<TProviders extends Providers, TServices extends Services | void = void, TEventContext = void> {
     /** The base config for the environment */
@@ -34,11 +34,11 @@ export class EnvironmentContext<TProviders extends Providers, TServices extends 
     }
 
     /** Returns the base configuration for the provider */
-    providerConfig(
+    providerConfig<KProvider extends StringKeys<TProviders>>(
         context: FeatureContext<TProviders, TServices, TEventContext>,
-        provider: StringKeys<TProviders>,
+        provider: KProvider,
         feature: StringKeys<Features<TProviders>>,
-    ): unknown | Promise<unknown> {
+    ): ProviderTypeConfig<TProviders, KProvider> | Promise<ProviderTypeConfig<TProviders, KProvider>> {
         /* c8 ignore start */
         // Return the default provider config for the environment
         return this.config?.provider?.[provider];
@@ -46,20 +46,20 @@ export class EnvironmentContext<TProviders extends Providers, TServices extends 
     }
 
     /** Returns the base configuration for the feature */
-    featureConfig(
+    featureConfig<KFeature extends StringKeys<Features<TProviders>>> (
         context: FeatureContext<TProviders, TServices, TEventContext>,
         provider: StringKeys<TProviders>,
-        feature: StringKeys<Features<TProviders>>,
-    ): unknown | Promise<unknown> {
+        feature: KFeature,
+    ): FeatureTypeConfig<TProviders, KFeature> | Promise<FeatureTypeConfig<TProviders, KFeature>> {
         /* c8 ignore start */
         return this.config?.feature?.[feature];
         /* c8 ignore end */
     }
 
     /** Returns the configuration for the service */
-    serviceConfig(
-        service: TServices extends Services ? StringKeys<TServices> : never,
-    ): unknown | Promise<unknown> {
+    serviceConfig<KService extends StringKeys<TServices>> (
+        service: KService,
+    ): TServices[KService] | Promise<TServices[KService]> {
         /* c8 ignore start */
         return this.config?.service?.[service];
         /* c8 ignore end */
