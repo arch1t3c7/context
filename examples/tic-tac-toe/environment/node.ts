@@ -16,7 +16,6 @@ export class NodeEnvironmentContext extends EnvironmentContext<typeof providers,
         super({}, providers, {
             'board': `local`,
             'layout': `local`,
-
             'ascii': `shell`,
             'console': `shell`,
             'render': `shell`,

@@ -1,15 +1,12 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
 import { EnvironmentContext } from './environment-context.js';
+import { Provider } from './provider.js';
 
 type ProviderMap = {
-    bar: () => any;
+    bar: () => Promise<Provider<{ foo: () => Promise<any> }>>;
 }
 
-class TestContext extends EnvironmentContext<ProviderMap> {
-    load = jest.fn();
-    module = jest.fn();
-    asyncModule = jest.fn(() => Promise.resolve()) as any;
-}
+class TestContext extends EnvironmentContext<ProviderMap> { }
 
 describe(`EnvironmentContext`, () => {
     let config: {
@@ -20,11 +17,22 @@ describe(`EnvironmentContext`, () => {
             foo: undefined;
         }
     };
-    let providers: {
-        bar: () => Promise<{}>
+
+    let fooFeature: {};
+    let features: {
+        foo: () => Promise<typeof fooFeature>
     };
+    let barProvider: Provider<typeof features>;
+    let providers: ProviderMap;
 
     beforeEach(() => {
+        fooFeature = {};
+        barProvider = {
+            feature: {
+                foo: () => Promise.resolve(fooFeature)
+            }
+        } as Provider<typeof features>;
+
         config = {
             provider: {
                 bar: undefined,
@@ -35,7 +43,7 @@ describe(`EnvironmentContext`, () => {
         };
 
         providers = {
-            bar: () => Promise.resolve({ })
+            bar: () => Promise.resolve(barProvider)
         };
     });
 
@@ -83,6 +91,28 @@ describe(`EnvironmentContext`, () => {
             it(`should return the config section for the feature`, () => {
                 const conf = instance.featureConfig(undefined!, `bar`, `foo`) as any;
                 expect(conf).toBe(config.feature.foo);
+            });
+        });
+
+        describe(`module`, () => {
+            it(`should be a function`, () => {
+                expect(typeof instance.module).toBe(`function`);
+            });
+
+            it(`should return undefined by default`, () => {
+                const conf = instance.module(`an name`);
+                expect(conf).toBe(undefined);
+            });
+        });
+
+        describe(`asyncModule`, () => {
+            it(`should be a function`, () => {
+                expect(typeof instance.asyncModule).toBe(`function`);
+            });
+
+            it(`should return undefined by default`, async () => {
+                const conf = await instance.asyncModule(`an name`);
+                expect(conf).toBe(undefined);
             });
         });
     });

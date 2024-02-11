@@ -5,7 +5,7 @@ import { EventEmitter } from './util/event-emitter.js';
 
 export class ServiceContext<
     TServices extends Services,
-    TEventContext
+    TEventContext = void
 > extends EventEmitter<`event`, ServiceContextEventHandler<TServices, TEventContext>, [StringKeys<TServices>, TEventContext?]> {
     services: TServices;
 

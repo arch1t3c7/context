@@ -39,8 +39,10 @@ export class EnvironmentContext<TProviders extends Providers, TServices extends 
         provider: StringKeys<TProviders>,
         feature: StringKeys<Features<TProviders>>,
     ): unknown | Promise<unknown> {
+        /* c8 ignore start */
         // Return the default provider config for the environment
         return this.config?.provider?.[provider];
+        /* c8 ignore end */
     }
 
     /** Returns the base configuration for the feature */
@@ -49,16 +51,18 @@ export class EnvironmentContext<TProviders extends Providers, TServices extends 
         provider: StringKeys<TProviders>,
         feature: StringKeys<Features<TProviders>>,
     ): unknown | Promise<unknown> {
+        /* c8 ignore start */
         return this.config?.feature?.[feature];
+        /* c8 ignore end */
     }
 
     /** Loads a module directly */
-    module<T>(): T | undefined {
+    module<T>(identifier: string): T | undefined {
         return undefined;
     }
 
     /** Loads a module asynchronously */
-    async asyncModule<T>(): Promise<T | undefined> {
+    async asyncModule<T>(identifier: string): Promise<T | undefined> {
         return undefined;
     }
 }

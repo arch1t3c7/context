@@ -68,7 +68,11 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const disposableProm: (typeof prom & AsyncDisposable) = prom as any;
         let loadedFeature: Awaited<typeof prom> | undefined;
-        prom.then((feat) => { loadedFeature = feat });
+        prom.then(
+            (feat) => { loadedFeature = feat },
+            // This style can lead to false inhandled rejections, so we make sure we don't get any
+            () => undefined,
+        );
 
         disposableProm[Symbol.asyncDispose] = async () => {
             if (loadedFeature === undefined) {

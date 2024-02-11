@@ -1,21 +1,19 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
 import { ProviderContext } from './provider-context.js';
 import { EnvironmentContext } from './environment-context.js';
-import type { ProviderLoader } from './type.js';
 import { Cachable } from './cache/cache-item.js';
+import { Provider } from './provider.js';
 
 type ProviderMap = {
-    bar: () => Promise<any>;
+    bar: () => Promise<Provider<{ foo: () => Promise<any> }>>;
 }
 
 class TestContext extends EnvironmentContext<ProviderMap> {
-    load = jest.fn();
     module = jest.fn();
     asyncModule = jest.fn(() => Promise.resolve()) as any;
 }
 
 describe(`ProviderContext`, () => {
-    let factory: ProviderLoader<ProviderMap[`bar`]>;
     let environmentContext: TestContext;
 
     let config: {
@@ -26,12 +24,21 @@ describe(`ProviderContext`, () => {
             foo: undefined;
         }
     };
-    let providers: {
-        bar: () => Promise<{}>
+
+    let fooFeature: {};
+    let features: {
+        foo: () => Promise<typeof fooFeature>
     };
+    let barProvider: Provider<typeof features>;
+    let providers: ProviderMap;
 
     beforeEach(() => {
-        factory = jest.fn();
+        fooFeature = {};
+        barProvider = {
+            feature: {
+                foo: () => Promise.resolve(fooFeature)
+            }
+        } as Provider<typeof features>;
 
         config = {
             provider: {
@@ -43,11 +50,10 @@ describe(`ProviderContext`, () => {
         };
 
         providers = {
-            bar: () => Promise.resolve({ })
+            bar: () => Promise.resolve(barProvider)
         };
 
         environmentContext = new TestContext(config, providers, { foo: `bar` });
-        environmentContext.load.mockReturnValue(factory);
     });
 
     describe(`constructor`, () => {
@@ -63,31 +69,6 @@ describe(`ProviderContext`, () => {
 
         beforeEach(() => {
             instance = new ProviderContext(environmentContext);
-        });
-
-        describe(`load`, () => {
-            it(`should be a function`, () => {
-                expect(typeof instance.load).toBe(`function`);
-            });
-
-            it(`should call environmentContext to load the specified provider`, async () => {
-                await instance.load(`bar`, undefined, {} as any);
-
-                expect(environmentContext.load).toBeCalledWith(`bar`);
-            });
-            it(`should throw an error if no provider is returned from the environmentContext.load function`, async () => {
-                environmentContext.load.mockReturnValue(undefined);
-
-                await expect(instance.load(`bar`, undefined, {} as any)).rejects.toThrow();
-            });
-            it(`should create the provider with the supplied context and config`, async () => {
-                const context = Symbol(`context`);
-                const config = Symbol(`config`);
-
-                await instance.load(`bar`, config, context as any);
-
-                expect(factory).toBeCalledWith(context, config);
-            });
         });
 
         describe(`hold`, () => {

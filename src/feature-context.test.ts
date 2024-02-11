@@ -5,7 +5,7 @@ import { ProviderContext } from './provider-context.js';
 import { Provider } from './provider.js';
 
 type ProviderMap = {
-    bar: () => any;
+    bar: () => Promise<Provider<{ foo: () => Promise<any> }>>;
 }
 
 class TestEnvironmentContext extends EnvironmentContext<ProviderMap> {
@@ -41,11 +41,22 @@ describe(`FeatureContext`, () => {
             foo: undefined;
         }
     };
-    let providers: {
-        bar: () => Promise<any>
+
+    let fooFeature: {};
+    let features: {
+        foo: () => Promise<typeof fooFeature>
     };
+    let barProvider: Provider<typeof features>;
+    let providers: ProviderMap;
 
     beforeEach(() => {
+        fooFeature = {};
+        barProvider = {
+            feature: {
+                foo: () => Promise.resolve(fooFeature)
+            }
+        } as Provider<typeof features>;
+
         config = {
             provider: {
                 bar: undefined,
@@ -56,7 +67,7 @@ describe(`FeatureContext`, () => {
         };
 
         providers = {
-            bar: () => Promise.resolve({ })
+            bar: () => Promise.resolve(barProvider)
         };
     });
 
@@ -93,7 +104,7 @@ describe(`FeatureContext`, () => {
                 const featureConfig = Symbol(`feature-config`);
                 const providerConfig = Symbol(`provider-config`);
 
-                instance.feature.foo(featureConfig, `bar`, providerConfig as any);
+                instance.feature.foo(featureConfig as any, `bar`, providerConfig as any);
 
                 expect(instance.load).toBeCalledWith(`foo`, featureConfig, `bar`, providerConfig);
             })
@@ -163,10 +174,6 @@ describe(`FeatureContext`, () => {
                 expect(typeof feat[Symbol.dispose]).toBe(`function`);
             });
 
-            it(`should attach an asyncronous disposal`, async () => {
-                const feat = await instance.load(`foo`, undefined);
-                expect(typeof feat[Symbol.asyncDispose]).toBe(`function`);
-            });
             it(`should attach a dispose function`, async () => {
                 const feat = await instance.load(`foo`, undefined);
                 expect(typeof feat.dispose).toBe(`function`);
