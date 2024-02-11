@@ -59,7 +59,10 @@ export class EnvironmentContext<TProviders extends Providers, TServices extends 
     /** Returns the configuration for the service */
     serviceConfig<KService extends StringKeys<TServices>> (
         service: KService,
-    ): TServices[KService] | Promise<TServices[KService]> {
+    ): TServices extends Services ?
+        TServices[KService][`config`] | Promise<TServices[KService][`config`]> :
+        never
+    {
         /* c8 ignore start */
         return this.config?.service?.[service];
         /* c8 ignore end */
