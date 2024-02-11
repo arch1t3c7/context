@@ -28,7 +28,7 @@ export type ProviderFeatures = {
 
 /** The structure of the provider factory collection  */
 export type Services = {
-    [name: string]: Service<any, any>;
+    [name: string]: Service<any, any, any>;
 }
 
 /** A utility to extract the config type the provider requires */
@@ -74,17 +74,20 @@ export type FeatureShortcuts<TProviders extends Providers> = {
 }
 
 /** The providers config structure derived from the providers factory collection */
-export type ProviderConfig<TProviders extends Providers> = {
+export type ProviderConfig<TProviders extends Providers, TServices extends Services | void> = {
     feature?: FeatureConfig<TProviders>;
     provider?: {
         [K in StringKeys<TProviders>]: Parameters<TProviders[K]>[1]
     };
+    service?: TServices extends Services ? {
+        [K in StringKeys<TServices>]: TServices[K][`config`]
+    } : undefined;
 }
 
 /** Provides a way to tie together providers and the default config */
 export type DefaultProviders<TProviders extends Providers> = Partial<Record<StringKeys<Features<TProviders>>, StringKeys<TProviders>>>;
 
-export type ServiceEventHandler<TEventContext, TEvents = never> = (this: Service<TEventContext, TEvents>, context?: TEventContext) => void;
+export type ServiceEventHandler<TEventContext, TEvents = never> = (this: Service<TEventContext, TEvents, any>, context?: TEventContext) => void;
 export type ServiceContextEventHandler<TServices extends Services, TEventContext> = (this: ServiceContext<TServices, TEventContext>, service: StringKeys<TServices>, context?: TEventContext) => void;
 
 export type AnyFunc = (...args: any[]) => any;

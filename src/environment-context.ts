@@ -4,7 +4,7 @@ import type { Providers, Features, ProviderConfig, StringKeys, DefaultProviders,
 
 export class EnvironmentContext<TProviders extends Providers, TServices extends Services | void = void, TEventContext = void> {
     /** The base config for the environment */
-    config: ProviderConfig<TProviders> | void;
+    config: ProviderConfig<TProviders, TServices> | void;
 
     /** The default provider for the features */
     defaultProviders: DefaultProviders<TProviders>;
@@ -19,7 +19,7 @@ export class EnvironmentContext<TProviders extends Providers, TServices extends 
 
     /** Creates a new environment context */
     constructor(
-        config: ProviderConfig<TProviders>,
+        config: ProviderConfig<TProviders, TServices>,
         providers: TProviders,
         defaultProviders?: DefaultProviders<TProviders>,
         serviceContext?: TServices extends Services ?
@@ -53,6 +53,16 @@ export class EnvironmentContext<TProviders extends Providers, TServices extends 
     ): unknown | Promise<unknown> {
         /* c8 ignore start */
         return this.config?.feature?.[feature];
+        /* c8 ignore end */
+    }
+
+    /** Returns the configuration for the service */
+    serviceConfig(
+        context: FeatureContext<TProviders, TServices, TEventContext>,
+        service: TServices extends Services ? StringKeys<TServices> : never,
+    ): unknown | Promise<unknown> {
+        /* c8 ignore start */
+        return this.config?.service?.[service];
         /* c8 ignore end */
     }
 

@@ -7,15 +7,18 @@ export enum ServiceEvent {
     event = `event`,
 }
 
-export class Service<TEventContext, TEvents = never> extends EventEmitter<ServiceEvent | TEvents, ServiceEventHandler<TEventContext>> {
+export class Service<TEventContext, TEvents = never, TConfig = void> extends EventEmitter<ServiceEvent | TEvents, ServiceEventHandler<TEventContext>> {
     readonly name: string;
+
+    config: TConfig;
 
     #running = false;
     #started = false;
 
-    constructor() {
+    constructor(config: TConfig) {
         super();
         this.name = this.constructor.name;
+        this.config = config;
     }
 
     get running() {

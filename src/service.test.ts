@@ -4,7 +4,7 @@ import { Service, ServiceEvent } from './service.js';
 describe(`Service`, () => {
     describe(`constructor`, () => {
         it(`should initialize the "name" property`, () => {
-            const instance = new Service<{}>();
+            const instance = new Service<{}>(undefined);
 
             expect(instance.name).toBe(Service.name);
         });
@@ -15,7 +15,7 @@ describe(`Service`, () => {
         let instance: Service<typeof eventContext>;
 
         beforeEach(() => {
-            instance = new Service<typeof eventContext>();
+            instance = new Service<typeof eventContext>(undefined);
         });
 
         describe(`start`, () => {

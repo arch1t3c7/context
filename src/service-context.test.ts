@@ -23,7 +23,7 @@ describe(`ServiceContext`, () => {
         beforeEach(() => {
             eventHandler = jest.fn();
             services = {
-                foo: new Service<typeof eventContext>(),
+                foo: new Service<typeof eventContext>(undefined),
             };
 
             instance = new ServiceContext(services);

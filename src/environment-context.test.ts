@@ -1,12 +1,14 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
 import { EnvironmentContext } from './environment-context.js';
 import { Provider } from './provider.js';
+import { ServiceContext } from './service-context.js';
+import { Service } from './service.js';
 
 type ProviderMap = {
     bar: () => Promise<Provider<{ foo: () => Promise<any> }>>;
 }
 
-class TestContext extends EnvironmentContext<ProviderMap> { }
+class TestContext extends EnvironmentContext<ProviderMap, { baz: Service<any, never, {}> }> { }
 
 describe(`EnvironmentContext`, () => {
     let config: {
@@ -15,7 +17,10 @@ describe(`EnvironmentContext`, () => {
         };
         feature: {
             foo: undefined;
-        }
+        };
+        service: {
+            baz: {};
+        };
     };
 
     let fooFeature: {};
@@ -24,6 +29,10 @@ describe(`EnvironmentContext`, () => {
     };
     let barProvider: Provider<typeof features>;
     let providers: ProviderMap;
+    let services: {
+        baz: Service<any, never, {}>;
+    };
+    let serviceContext: ServiceContext<typeof services>;
 
     beforeEach(() => {
         fooFeature = {};
@@ -32,6 +41,12 @@ describe(`EnvironmentContext`, () => {
                 foo: () => Promise.resolve(fooFeature)
             }
         } as Provider<typeof features>;
+        services = {
+            baz: {} as Service<any, never, {}>
+        };
+        serviceContext = {
+            services
+        } as ServiceContext<typeof services>;
 
         config = {
             provider: {
@@ -39,7 +54,10 @@ describe(`EnvironmentContext`, () => {
             },
             feature: {
                 foo: undefined,
-            }
+            },
+            service: {
+                baz: {},
+            },
         };
 
         providers = {
@@ -49,20 +67,20 @@ describe(`EnvironmentContext`, () => {
 
     describe(`constructor`, () => {
         it(`should define the config property`, () => {
-            const instance = new TestContext(config, providers, { foo: `bar` });
+            const instance = new TestContext(config, providers, { foo: `bar` }, serviceContext);
             expect(instance.config).toBe(config);
         });
 
         it(`should define the defaultProviders property`, () => {
-            const instance = new TestContext(config, providers, { foo: `bar` });
+            const instance = new TestContext(config, providers, { foo: `bar` }, serviceContext);
 
             expect(instance.defaultProviders).toEqual({ foo: `bar` });
         });
 
         it(`should set defaultProviders to an empty object when not supplied`, () => {
-            const instance = new TestContext(config, providers);
+            const instance = new TestContext(config, providers, undefined, serviceContext);
 
-            expect(instance.defaultProviders).toEqual(expect.any(Object));
+            expect(instance.defaultProviders).toEqual(expect.any(Object),);
         });
     })
 
@@ -70,7 +88,7 @@ describe(`EnvironmentContext`, () => {
         let instance: TestContext;
 
         beforeEach(() => {
-            instance = new TestContext(config, providers, { foo: `bar` });
+            instance = new TestContext(config, providers, { foo: `bar` }, serviceContext);
         })
 
         describe(`providerConfig`, () => {
@@ -91,6 +109,16 @@ describe(`EnvironmentContext`, () => {
             it(`should return the config section for the feature`, () => {
                 const conf = instance.featureConfig(undefined!, `bar`, `foo`) as any;
                 expect(conf).toBe(config.feature.foo);
+            });
+        });
+
+        describe(`serviceConfig`, () => {
+            it(`should be a function`, () => {
+                expect(typeof instance.serviceConfig).toBe(`function`);
+            });
+            it(`should return the config section for the service`, () => {
+                const conf = instance.serviceConfig(undefined!, `baz`) as any;
+                expect(conf).toBe(config.service.baz);
             });
         });
 
