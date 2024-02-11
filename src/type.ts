@@ -84,8 +84,6 @@ export type ProviderConfig<TProviders extends Providers> = {
 /** Provides a way to tie together providers and the default config */
 export type DefaultProviders<TProviders extends Providers> = Partial<Record<StringKeys<Features<TProviders>>, StringKeys<TProviders>>>;
 
-export type ProviderLoader<TProvider> = (context: FeatureContext<any, any, any>, config: any) => Promise<TProvider>;
-
 export type ServiceEventHandler<TEventContext, TEvents = never> = (this: Service<TEventContext, TEvents>, context?: TEventContext) => void;
 export type ServiceContextEventHandler<TServices extends Services, TEventContext> = (this: ServiceContext<TServices, TEventContext>, service: StringKeys<TServices>, context?: TEventContext) => void;
 
