@@ -58,7 +58,6 @@ export class EnvironmentContext<TProviders extends Providers, TServices extends 
 
     /** Returns the configuration for the service */
     serviceConfig(
-        context: FeatureContext<TProviders, TServices, TEventContext>,
         service: TServices extends Services ? StringKeys<TServices> : never,
     ): unknown | Promise<unknown> {
         /* c8 ignore start */
