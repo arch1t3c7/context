@@ -5,7 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Jest file",
+            "name": "Run Tic Tac Toe",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/examples/tic-tac-toe/index.ts",
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+        },
+        {
+            "name": "Current Test",
             "type": "node",
             "request": "launch",
             "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/jest",

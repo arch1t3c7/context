@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
-import { Provider } from './provider';
+import { Provider } from './provider.js';
 
 class TestProvider extends Provider<any, any> {
-    feature = jest.fn();
+    loadFeature = jest.fn();
     cachePolicies = jest.fn(() => []);
 }
 

@@ -1,5 +1,5 @@
-import { Holdable } from '../util/holdable';
-import type { CachePolicy } from './policy/cache-policy';
+import { Holdable } from '../util/holdable.js';
+import type { CachePolicy } from './policy/cache-policy.js';
 
 export type Cachable<TKey> = {
     /** The group the cachable item belongs to */

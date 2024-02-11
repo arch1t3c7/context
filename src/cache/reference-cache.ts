@@ -1,6 +1,6 @@
-import type { CachePolicy } from './policy/cache-policy';
-import { CacheItem, type Cachable } from './cache-item';
-import { HoldableEvent } from '../util/holdable';
+import type { CachePolicy } from './policy/cache-policy.js';
+import { CacheItem, type Cachable } from './cache-item.js';
+import { HoldableEvent } from '../util/holdable.js';
 
 export class ReferenceCache<
     TKey,

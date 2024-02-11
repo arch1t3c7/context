@@ -1,7 +1,7 @@
-import type { CacheItem, Cachable } from '../cache-item';
-import { HoldableEvent } from '../../util/holdable';
-import { CachePolicy } from './cache-policy';
-import { AnyFunc } from '../../type';
+import type { CacheItem, Cachable } from '../cache-item.js';
+import { HoldableEvent } from '../../util/holdable.js';
+import { CachePolicy } from './cache-policy.js';
+import { AnyFunc } from '../../type.js';
 
 export interface TimedCachePolicyConfig {
     time: number;

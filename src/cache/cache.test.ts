@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
-import { Cache } from './cache';
-import { Cachable, CacheItem } from './cache-item';
-import { CachePolicy } from './policy/cache-policy';
+import { Cache } from './cache.js';
+import { Cachable, CacheItem } from './cache-item.js';
+import { CachePolicy } from './policy/cache-policy.js';
 
 class TestPolicy extends CachePolicy<string, void> {
     items: CacheItem<string, any>[] = [];

@@ -1,10 +1,12 @@
 import merge from 'lodash.merge';
-import { ProviderContext } from './provider-context';
-import type { Disposable, Providers, FeatureShortcuts, StringKeys, Features, FeatureType, ProviderTypeConfig, Services } from './type';
-import { UserError } from './error/user';
+import { ProviderContext } from './provider-context.js';
+import type { FullDisposable, Providers, FeatureShortcuts, StringKeys, Features, FeatureType, ProviderTypeConfig, Services } from './type.js';
+import { UserError } from './error/user.js';
 
-export class FeatureContext<TProviders extends Providers, TServices extends Services | void = void> {
-    providerContext: ProviderContext<TProviders, TServices>;
+const ASYNC_DISPOSE = Symbol(`async-dispose`);
+
+export class FeatureContext<TProviders extends Providers, TServices extends Services | void = void, TEventContext = void> {
+    providerContext: ProviderContext<TProviders, TServices, TEventContext>;
 
     feature: FeatureShortcuts<TProviders>;
 
@@ -22,7 +24,7 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
     }
     /* c8 ignore end */
 
-    constructor(providerContext: ProviderContext<TProviders, TServices>) {
+    constructor(providerContext: ProviderContext<TProviders, TServices, TEventContext>) {
         this.providerContext = providerContext;
 
         const self = this;
@@ -54,14 +56,40 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
         return merge({}, config1, config2);
     }
 
-    async load<KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
+    load<KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
         feature: KFeature,
         config: unknown,
         provider?: KProvider,
         suppliedProviderConfig?: KProvider extends StringKeys<TProviders> ?
             ProviderTypeConfig<TProviders, KProvider> :
             never,            
-    ): Promise<FeatureType<TProviders, KFeature> & Disposable> {
+    ): Promise<FeatureType<TProviders, KFeature>> & AsyncDisposable {
+        const prom = this.#load(feature, config, provider, suppliedProviderConfig);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const disposableProm: (typeof prom & AsyncDisposable) = prom as any;
+        let loadedFeature: Awaited<typeof prom> | undefined;
+        prom.then((feat) => { loadedFeature = feat });
+
+        disposableProm[Symbol.asyncDispose] = async () => {
+            if (loadedFeature === undefined) {
+                return;
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (loadedFeature as any)[ASYNC_DISPOSE]();
+        };
+
+        return disposableProm;
+    }
+
+    async #load<KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
+        feature: KFeature,
+        config: unknown,
+        provider?: KProvider,
+        suppliedProviderConfig?: KProvider extends StringKeys<TProviders> ?
+            ProviderTypeConfig<TProviders, KProvider> :
+            never,            
+    ): Promise<FeatureType<TProviders, KFeature> & FullDisposable> {
         if (provider === undefined) {
             // Get the default
             provider = this.environment.defaultProviders[feature] as KProvider;
@@ -84,7 +112,7 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
         // Initialize feature
         const featureConfig = await this.environment.featureConfig(this, provider, feature);
         const combined = this.combineFeatureConfig(featureConfig, config);
-        const feat = await prov.feature(this, feature, combined);
+        const feat = await prov.loadFeature(this, feature, combined);
 
         const dispose = () => {
             this.providerContext.release(prov);
@@ -114,7 +142,7 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
             ...feat,
             dispose,
             [Symbol.dispose]: syncDispose,
-            [Symbol.asyncDispose]: asyncDispose,
+            [ASYNC_DISPOSE]: asyncDispose,
         };        
     }
 }

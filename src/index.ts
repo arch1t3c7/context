@@ -1,6 +1,6 @@
-export { Provider } from './provider';
-export { ProviderContext } from './provider-context';
-export { EnvironmentContext } from './environment-context';
-export { FeatureContext } from './feature-context';
-export { CachePolicy, GlobalCachePolicy, LruCachePolicy, TimedCachePolicy } from './cache/index';
-export type { ProviderConfig, ProviderLoader, Disposable } from './type';
+export { Provider } from './provider.js';
+export { ProviderContext } from './provider-context.js';
+export { EnvironmentContext } from './environment-context.js';
+export { FeatureContext } from './feature-context.js';
+export { CachePolicy, GlobalCachePolicy, LruCachePolicy, TimedCachePolicy } from './cache/index.js';
+export type { ProviderConfig, ProviderLoader, FullDisposable as Disposable } from './type.js';

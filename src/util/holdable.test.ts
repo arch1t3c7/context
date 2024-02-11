@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { Holdable, HoldableEvent } from './holdable';
+import { Holdable, HoldableEvent } from './holdable.js';
 
 describe(`Holdable`, () => {
     describe(`constructor`, () => {

@@ -1,19 +1,20 @@
 import hash from 'object-hash';
-import { ProviderFeatures } from './type';
-import { Cachable } from './cache/cache-item';
-import { CachePolicy } from './cache/index';
+import { ProviderFeatures } from './type.js';
+import { Cachable } from './cache/cache-item.js';
+import { CachePolicy } from './cache/index.js';
 
-export abstract class Provider<TFeatures extends ProviderFeatures, TConfig = void> implements Cachable<string> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export abstract class Provider<TFeatures extends ProviderFeatures = any, TConfig = void> implements Cachable<string> {
     readonly name: string;
     readonly config: TConfig;
-    readonly features: TFeatures;
+    readonly feature: TFeatures;
     readonly cacheKey: string;
 
-    constructor(features: TFeatures, config: TConfig) {
-        this.name = this.constructor.name;
+    constructor(feature: TFeatures, config: TConfig, name?: string) {
+        this.name = name || this.constructor.name;
         this.config = config;
         this.cacheKey = this.generateCacheKey();
-        this.features = features;
+        this.feature = feature;
     }
 
     /**
@@ -23,14 +24,20 @@ export abstract class Provider<TFeatures extends ProviderFeatures, TConfig = voi
      * @param config The feature config to supply to the feature factory
      * @returns The loaded feature
      */
-    // abstract feature<TFeatureContext, TFeature extends keyof TFeatureMap>(context: TFeatureContext, feature: TFeature, config: TFeatureMap[TFeature][1]): Promise<TFeatureMap[TFeature][0]>;
-    abstract feature<
-        TFeature extends keyof TFeatures
-    >(
-        context: Parameters<TFeatures[TFeature]>[1],
+    async loadFeature<TFeature extends keyof TFeatures>(
+        context: ThisParameterType<TFeatures[TFeature]>,
         feature: TFeature,
-        config: Parameters<TFeatures[TFeature]>[2]
-    ): Promise<ReturnType<TFeatures[TFeature]>>;
+        config: Parameters<TFeatures[TFeature]>[1]
+    ): Promise<Awaited<ReturnType<TFeatures[TFeature]>>> {
+        const factory = this.feature[feature];
+
+        if (!factory) {
+            throw new Error(`Provider ${this.name} does not support feature "${String(feature)}"`);
+        }
+
+        const created = await factory.call(context, config);
+        return created;
+    }
 
     /** Returns the policies for the provider. These should be static as they will be retrieved once per unique provider name */
     abstract cachePolicies(): CachePolicy<string, unknown>[];

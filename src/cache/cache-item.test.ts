@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { Cachable, CacheItem } from './cache-item';
+import { Cachable, CacheItem } from './cache-item.js';
 
 describe(`CacheItem`, () => {
     describe(`constructor`, () => {

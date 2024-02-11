@@ -1,8 +1,8 @@
-import { FeatureContext } from './index';
-import { ServiceContext } from './service-context';
-import type { ProviderLoader, Providers, Features, ProviderConfig, StringKeys, DefaultProviders, Services } from './type';
+import { FeatureContext } from './feature-context.js';
+import { ServiceContext } from './service-context.js';
+import type { Providers, Features, ProviderConfig, StringKeys, DefaultProviders, Services } from './type.js';
 
-export abstract class EnvironmentContext<TProviders extends Providers, TServices extends Services | void = void> {
+export class EnvironmentContext<TProviders extends Providers, TServices extends Services | void = void, TEventContext = void> {
     /** The base config for the environment */
     config: ProviderConfig<TProviders> | void;
 
@@ -14,7 +14,7 @@ export abstract class EnvironmentContext<TProviders extends Providers, TServices
 
     /** The available services */
     serviceContext?: TServices extends Services ?
-        ServiceContext<TServices> :
+        ServiceContext<TServices, TEventContext> :
         undefined;
 
     /** Creates a new environment context */
@@ -23,7 +23,7 @@ export abstract class EnvironmentContext<TProviders extends Providers, TServices
         providers: TProviders,
         defaultProviders?: DefaultProviders<TProviders>,
         serviceContext?: TServices extends Services ?
-            ServiceContext<TServices> :
+            ServiceContext<TServices, TEventContext> :
             undefined,
     ) {
         this.config = config;
@@ -33,12 +33,9 @@ export abstract class EnvironmentContext<TProviders extends Providers, TServices
         this.serviceContext = serviceContext;
     }
 
-    /** The provider module loader */
-    abstract load<TProvider>(provider: StringKeys<TProviders>): Promise<ProviderLoader<TProvider>>;
-
     /** Returns the base configuration for the provider */
     providerConfig(
-        context: FeatureContext<TProviders, TServices>,
+        context: FeatureContext<TProviders, TServices, TEventContext>,
         provider: StringKeys<TProviders>,
         feature: StringKeys<Features<TProviders>>,
     ): unknown | Promise<unknown> {
@@ -48,7 +45,7 @@ export abstract class EnvironmentContext<TProviders extends Providers, TServices
 
     /** Returns the base configuration for the feature */
     featureConfig(
-        context: FeatureContext<TProviders, TServices>,
+        context: FeatureContext<TProviders, TServices, TEventContext>,
         provider: StringKeys<TProviders>,
         feature: StringKeys<Features<TProviders>>,
     ): unknown | Promise<unknown> {
@@ -56,8 +53,12 @@ export abstract class EnvironmentContext<TProviders extends Providers, TServices
     }
 
     /** Loads a module directly */
-    abstract module<T>(): T;
+    module<T>(): T | undefined {
+        return undefined;
+    }
 
     /** Loads a module asynchronously */
-    abstract asyncModule<T>(): Promise<T>;
+    async asyncModule<T>(): Promise<T | undefined> {
+        return undefined;
+    }
 }

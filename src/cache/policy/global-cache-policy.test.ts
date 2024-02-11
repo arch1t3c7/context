@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
-import { GlobalCachePolicy } from './global-cache-policy';
-import { CacheItem } from '../cache-item';
+import { GlobalCachePolicy } from './global-cache-policy.js';
+import { CacheItem } from '../cache-item.js';
 
 describe(`GlobalCachePolicy`, () => {
     let instance: GlobalCachePolicy<string>;

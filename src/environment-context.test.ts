@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
-import { EnvironmentContext } from './environment-context';
+import { EnvironmentContext } from './environment-context.js';
 
 type ProviderMap = {
     bar: () => any;

@@ -1,16 +1,16 @@
-import { FeatureContext } from './feature-context';
-import { Provider } from './provider';
-import { Cache } from './cache/index';
-import { EnvironmentContext } from './environment-context';
-import type { ProviderFeatures, ProviderType, Providers, Services, StringKeys } from './type';
-import { UserError } from './error/user';
+import { FeatureContext } from './feature-context.js';
+import { Provider } from './provider.js';
+import { Cache } from './cache/index.js';
+import { EnvironmentContext } from './environment-context.js';
+import type { ProviderFeatures, Providers, Services, StringKeys } from './type.js';
+import { UserError } from './error/user.js';
 
-export class ProviderContext<TProviders extends Providers, TServices extends Services | void = void> {
+export class ProviderContext<TProviders extends Providers, TServices extends Services | void = void, TEventContext = void> {
     /** The cache to hold the cached providers */
     #cache = new Cache<string, Provider<ProviderFeatures, unknown>>();
 
     /** The environment the providers are being managed by */
-    readonly environmentContext: EnvironmentContext<TProviders, TServices>;
+    readonly environmentContext: EnvironmentContext<TProviders, TServices, TEventContext>;
 
     /* c8 ignore start */
 
@@ -32,7 +32,7 @@ export class ProviderContext<TProviders extends Providers, TServices extends Ser
     /* c8 ignore end */
 
     /** Creates a new provider context which will be used to manage loading and caching of providers */
-    constructor(environmentContext: EnvironmentContext<TProviders>) {
+    constructor(environmentContext: EnvironmentContext<TProviders, TServices, TEventContext>) {
         this.environmentContext = environmentContext;
     }
 
@@ -42,12 +42,12 @@ export class ProviderContext<TProviders extends Providers, TServices extends Ser
      * @param config THe configuration to initialize the provider with
      * @returns The loaded provider
      */
-    async load<TProviderConfig, KProvider extends StringKeys<TProviders>>(providerKey: KProvider, config: TProviderConfig, context: FeatureContext<TProviders, TServices>) {
+    async load<TProviderConfig, KProvider extends StringKeys<TProviders>>(providerKey: KProvider, config: TProviderConfig, context: FeatureContext<TProviders, TServices, TEventContext>) {
         // Load the provider module
-        const providerFactory = await this.environmentContext.load<ProviderType<TProviders, KProvider>>(providerKey);
+        const providerFactory = this.environment.providers[providerKey];
         if (providerFactory === undefined) {
-            throw new ProviderNotFoundError(`No provider "${String(providerKey)}" could be loaded`, {
-                detail: `Unable to load a provider from the environment context with the key "${String(providerKey)}"`,
+            throw new ProviderNotFoundError(`No provider "${String(providerKey)}" was found`, {
+                detail: `Unable to find a provider from the environment context with the key "${String(providerKey)}"`,
                 providerKey,
             });
         }

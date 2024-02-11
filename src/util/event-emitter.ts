@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { AnyFunc } from '../type';
+import type { AnyFunc } from '../type.js';
 
 export class EventEmitter<TEvent = string, THandler extends AnyFunc = AnyFunc, TArgs extends any[] = any[]> {
     #handlers = new Map<TEvent, { once: boolean, handler: THandler }[]>;

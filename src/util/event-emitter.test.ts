@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
-import { EventEmitter } from './event-emitter';
+import { EventEmitter } from './event-emitter.js';
 
 describe(`EventEmitter`, () => {
     let eventEmitter: EventEmitter;

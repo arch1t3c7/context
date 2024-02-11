@@ -1,5 +1,5 @@
-import type { CacheItem, Cachable } from '../cache-item';
-import { CachePolicy } from './cache-policy';
+import type { CacheItem, Cachable } from '../cache-item.js';
+import { CachePolicy } from './cache-policy.js';
 
 export interface LruCachePolicyConfig {
     count: number;

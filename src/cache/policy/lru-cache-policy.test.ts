@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
-import { LruCachePolicy } from './lru-cache-policy';
-import { CacheItem } from '../cache-item';
+import { LruCachePolicy } from './lru-cache-policy.js';
+import { CacheItem } from '../cache-item.js';
 
 describe(`LruCachePolicy`, () => {
     const count = 2;

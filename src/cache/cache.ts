@@ -1,5 +1,5 @@
-import { Cachable } from './cache-item';
-import { ReferenceCache } from './reference-cache';
+import { Cachable } from './cache-item.js';
+import { ReferenceCache } from './reference-cache.js';
 
 export class Cache<TKey, TCachable extends Cachable<TKey>> {
     #caches = new Map<string, ReferenceCache<TKey, TCachable>>();

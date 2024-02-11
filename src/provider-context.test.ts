@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
-import { ProviderContext } from './provider-context';
-import { EnvironmentContext } from './environment-context';
-import { ProviderLoader } from '.';
-import { Cachable } from './cache/cache-item';
+import { ProviderContext } from './provider-context.js';
+import { EnvironmentContext } from './environment-context.js';
+import type { ProviderLoader } from './type.js';
+import { Cachable } from './cache/cache-item.js';
 
 type ProviderMap = {
     bar: () => Promise<any>;

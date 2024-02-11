@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
-import { Service, ServiceEvent } from './service';
+import { Service, ServiceEvent } from './service.js';
 
 describe(`Service`, () => {
     describe(`constructor`, () => {

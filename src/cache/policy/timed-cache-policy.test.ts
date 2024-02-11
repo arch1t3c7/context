@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
-import { TimedCachePolicy } from './timed-cache-policy';
-import { CacheItem } from '../cache-item';
-import { HoldableEvent } from '../../util/holdable';
+import { TimedCachePolicy } from './timed-cache-policy.js';
+import { CacheItem } from '../cache-item.js';
+import { HoldableEvent } from '../../util/holdable.js';
 
 describe(`TimedCachePolicy`, () => {
     const time = 1000;

@@ -1,5 +1,5 @@
-import { EventEmitter } from '../../util/event-emitter';
-import type { Cachable, CacheItem } from '../cache-item';
+import { EventEmitter } from '../../util/event-emitter.js';
+import type { Cachable, CacheItem } from '../cache-item.js';
 
 export enum CachePolicyEvent {
     held = `held`,

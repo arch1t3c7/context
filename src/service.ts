@@ -1,5 +1,5 @@
-import type { ServiceEventHandler } from './type';
-import { EventEmitter } from './util/event-emitter';
+import type { ServiceEventHandler } from './type.js';
+import { EventEmitter } from './util/event-emitter.js';
 
 export enum ServiceEvent {
     start = `start`,
@@ -43,6 +43,10 @@ export class Service<TEventContext, TEvents = never> extends EventEmitter<Servic
             return 0;
         }
         return super.once(event, handler);
+    }
+
+    emit(event: TEvents | ServiceEvent, context?: TEventContext): number {
+        return super.emit(event, context);
     }
 
     #instantEvent(event: ServiceEvent, handler: ServiceEventHandler<TEventContext, TEvents>) {

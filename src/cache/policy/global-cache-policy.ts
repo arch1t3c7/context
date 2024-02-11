@@ -1,5 +1,5 @@
-import type { CacheItem, Cachable } from '../cache-item';
-import { CachePolicy } from './cache-policy';
+import type { CacheItem, Cachable } from '../cache-item.js';
+import { CachePolicy } from './cache-policy.js';
 
 export class GlobalCachePolicy<TKey> extends CachePolicy<TKey, void> {
     onHold(item: CacheItem<TKey, Cachable<TKey>>) {

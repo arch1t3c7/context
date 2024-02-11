@@ -1,5 +1,5 @@
-import { ProgramError } from '../error/program';
-import { EventEmitter } from './event-emitter';
+import { ProgramError } from '../error/program.js';
+import { EventEmitter } from './event-emitter.js';
 
 export enum HoldableEvent {
     held = `held`,

@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeEach } from '@jest/globals';
-import { FeatureContext } from './feature-context';
-import { EnvironmentContext } from './environment-context';
-import { ProviderContext } from './provider-context';
-import { Provider } from './provider';
+import { FeatureContext } from './feature-context.js';
+import { EnvironmentContext } from './environment-context.js';
+import { ProviderContext } from './provider-context.js';
+import { Provider } from './provider.js';
 
 type ProviderMap = {
     bar: () => any;
@@ -17,7 +17,7 @@ class TestEnvironmentContext extends EnvironmentContext<ProviderMap> {
 }
 
 class TestProvider extends Provider<any> {
-    feature = jest.fn();
+    loadFeature = jest.fn();
     cachePolicies = jest.fn(() => []);
 }
 
@@ -152,7 +152,7 @@ describe(`FeatureContext`, () => {
                 environmentContext.featureConfig = jest.fn(() => envConfig);
                 await instance.load(`foo`, suppliedConfig);
 
-                expect(provider.feature).toBeCalledWith(instance, `foo`, {
+                expect(provider.loadFeature).toBeCalledWith(instance, `foo`, {
                     ...envConfig,
                     ...suppliedConfig,
                 });
@@ -183,7 +183,7 @@ describe(`FeatureContext`, () => {
             it(`should release the hold on the provider on dispose`, async () => {
                 providerContext.hold = jest.fn();
                 providerContext.release = jest.fn();
-                provider.feature = jest.fn(() => ({}));
+                provider.loadFeature = jest.fn(() => ({}));
 
                 const result = await instance.load(`foo`, undefined);
                 await result.dispose();
@@ -196,7 +196,7 @@ describe(`FeatureContext`, () => {
 
                 providerContext.hold = jest.fn();
                 providerContext.release = jest.fn();
-                provider.feature = jest.fn(() => ({
+                provider.loadFeature = jest.fn(() => ({
                     [Symbol.dispose]: () => {
                         disposed = true;
                     }
@@ -212,7 +212,7 @@ describe(`FeatureContext`, () => {
 
                 providerContext.hold = jest.fn();
                 providerContext.release = jest.fn();
-                provider.feature = jest.fn(() => ({
+                provider.loadFeature = jest.fn(() => ({
                     [Symbol.asyncDispose]: () => {
                         disposed = true;
                     }
@@ -228,7 +228,7 @@ describe(`FeatureContext`, () => {
 
                 providerContext.hold = jest.fn();
                 providerContext.release = jest.fn();
-                provider.feature = jest.fn(() => ({
+                provider.loadFeature = jest.fn(() => ({
                     dispose: () => {
                         disposed = true;
                     }
