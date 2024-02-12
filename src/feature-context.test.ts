@@ -19,11 +19,6 @@ class TestEnvironmentContext extends EnvironmentContext<ProviderMap, void> {
     provider = { foo: `bar` as const }
 }
 
-class TestProvider extends Provider<any> {
-    loadFeature = jest.fn();
-    cachePolicies = jest.fn(() => []);
-}
-
 if (!Symbol.dispose) {
     (Symbol as any).dispose = Symbol(`dipose`);
 }
@@ -52,7 +47,8 @@ describe(`FeatureContext`, () => {
         },
         provider?: {
             bar: undefined,
-        }
+        },
+        symbol: Symbol,
     };
     let bazFeature: typeof fooFeature;
     let features: {
@@ -62,15 +58,27 @@ describe(`FeatureContext`, () => {
     let barProvider: Provider<typeof features>;
     let providers: ProviderMap;
 
+    class TestProvider extends Provider<typeof features> {
+        cachePolicies = jest.fn(() => []);
+    }
+
     beforeEach(() => {
-        fooFeature = {};
-        bazFeature = {};
+        fooFeature = {
+            symbol: Symbol(`foo feature`)
+        };
+        bazFeature = {
+            symbol: Symbol(`baz feature`)
+        };
         barProvider = {
             feature: {
                 foo: () => Promise.resolve(fooFeature),
                 baz: () => Promise.resolve(bazFeature),
             }
         } as Provider<typeof features>;
+        features = {
+            foo: () => Promise.resolve(fooFeature),
+            baz: () => Promise.resolve(bazFeature),
+        };
 
         config = {
             provider: {
@@ -88,9 +96,9 @@ describe(`FeatureContext`, () => {
     });
 
     beforeEach(() => {
-        environmentContext = new TestEnvironmentContext(config, providers, { foo: `bar` });
+        environmentContext = new TestEnvironmentContext(config, providers, { foo: `bar`, baz: `bar` });
         providerContext = new ProviderContext<ProviderMap>(environmentContext);
-        provider = new TestProvider(`test`, undefined);
+        provider = new TestProvider(features);
 
         providerContext.load = jest.fn(() => Promise.resolve(provider)) as any;
     });
@@ -135,25 +143,23 @@ describe(`FeatureContext`, () => {
                 instance.load = jest.fn();
                 instance.configFeature = `foo`;
 
-                await instance.config();
-
-                expect(instance.load).toBeCalledWith(`foo`, undefined)
+                const config = await instance.config();
+                expect((config as any).symbol).toBe(fooFeature.symbol);
             });
 
             it(`should use the supplied feature to load the config`, async () => {
                 instance.load = jest.fn();
                 instance.configFeature = `foo`;
 
-                await instance.config(`baz`);
-
-                expect(instance.load).toBeCalledWith(`baz`, undefined)
+                const config = await instance.config(`baz`);
+                expect((config as any).symbol).toBe(bazFeature.symbol);
             });
 
             it(`should return undefined if no feature is defined`, async () => {
                 instance.load = jest.fn();
-                instance.configFeature = `foo`;
+                instance.configFeature = undefined;
 
-                expect(await instance.config(`something else` as any)).toBe(undefined);
+                expect(await instance.config()).toBe(undefined);
             });
 
             it(`should call the load function with the feature name`, async () => {
@@ -214,6 +220,7 @@ describe(`FeatureContext`, () => {
             });
 
             it(`should combine the base config with the supplied config when calling the provider.feature`, async () => {
+                provider.loadFeature = jest.fn();
                 const envConfig = { foo: Symbol(`foo`) };
                 const suppliedConfig = { bar: Symbol(`bar`) };
 
@@ -247,7 +254,7 @@ describe(`FeatureContext`, () => {
             it(`should release the hold on the provider on dispose`, async () => {
                 providerContext.hold = jest.fn();
                 providerContext.release = jest.fn();
-                provider.loadFeature = jest.fn(() => ({}));
+                provider.loadFeature = jest.fn(() => ({})) as any;
 
                 const result = await instance.load(`foo`, undefined);
                 await result.dispose();
@@ -264,7 +271,7 @@ describe(`FeatureContext`, () => {
                     [Symbol.dispose]: () => {
                         disposed = true;
                     }
-                }));
+                })) as any;
 
                 const result = await instance.load(`foo`, undefined);
                 result[Symbol.dispose]();
@@ -280,7 +287,7 @@ describe(`FeatureContext`, () => {
                     [Symbol.asyncDispose]: () => {
                         disposed = true;
                     }
-                }));
+                })) as any;
 
                 const result = await instance.load(`foo`, undefined);
                 await result[Symbol.asyncDispose]();
@@ -296,7 +303,7 @@ describe(`FeatureContext`, () => {
                     dispose: () => {
                         disposed = true;
                     }
-                }));
+                })) as any;
 
                 const result = await instance.load(`foo`, undefined);
                 await result.dispose();

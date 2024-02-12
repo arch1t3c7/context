@@ -1,6 +1,6 @@
 import merge from 'lodash.merge';
 import { ProviderContext } from './provider-context.js';
-import type { FullDisposable, Providers, FeatureShortcuts, StringKeys, Features, FeatureType, ProviderTypeConfig, Services, ServiceShortcuts, ServiceFeatures, ConfigFeatures } from './type.js';
+import type { FullDisposable, Providers, FeatureShortcuts, StringKeys, Features, FeatureType, ProviderTypeConfig, Services, ServiceShortcuts, ServiceFeatures, ConfigFeatures, ProviderConfig } from './type.js';
 import { UserError } from './error/user.js';
 import { Service } from './service.js';
 
@@ -36,6 +36,11 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
                     if (typeof item !== `string`) {
                         return undefined;
                     }
+
+                    if (item === `toJSON`) {
+                        return undefined;
+                    }
+
                     /* c8 ignore end */
                     return function <KProvider extends StringKeys<TProviders> = StringKeys<TProviders>>(
                         config: unknown,
@@ -53,14 +58,21 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
     }
 
     /** A shortcut to load the defined config feature and return it */
-    async config(configFeature?: FeatureContext<TProviders, TServices, TEventContext>[`configFeature`]) {
+    async config<KProvider extends StringKeys<TProviders>>(
+        configFeature?: FeatureContext<TProviders, TServices, TEventContext>[`configFeature`],
+        config?: unknown,
+        provider?: KProvider,
+        providerConfig?: KProvider extends StringKeys<TProviders> ?
+            ProviderTypeConfig<TProviders, KProvider> :
+            never,
+    ) {
         configFeature = configFeature || this.configFeature;
         if (configFeature === undefined) {
             return undefined;
         }
 
-        const config = await this.load(configFeature, undefined);
-        return config;
+        const loadedConfig = await this.#load(configFeature, config, provider, providerConfig, true);
+        return loadedConfig as ProviderConfig<TProviders>;
     }
 
     protected combineProviderConfig<TObject, TSource>(config1: TObject, config2: TSource) {
@@ -77,7 +89,7 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
         provider?: KProvider,
         providerConfig?: KProvider extends StringKeys<TProviders> ?
             ProviderTypeConfig<TProviders, KProvider> :
-            never,            
+            never,
     ): Promise<FeatureType<TProviders, KFeature> & FullDisposable> {
         const feat = await this.load(service, config, provider, providerConfig);
 
@@ -93,14 +105,26 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
         return feat;
     }
 
-    load = async <KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
+    load<KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
+        feature: KFeature,
+        config: unknown,
+        provider?: KProvider,
+        providerConfig?: KProvider extends StringKeys<TProviders> ?
+            ProviderTypeConfig<TProviders, KProvider> :
+            never,            
+    ): Promise<FeatureType<TProviders, KFeature> & FullDisposable> {
+        return this.#load(feature, config, provider, providerConfig);
+    }
+
+    async #load<KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
         feature: KFeature,
         config: unknown,
         provider?: KProvider,
         suppliedProviderConfig?: KProvider extends StringKeys<TProviders> ?
             ProviderTypeConfig<TProviders, KProvider> :
-            never,            
-    ): Promise<FeatureType<TProviders, KFeature> & FullDisposable> => {
+            never,
+        skipConfig = false,
+    ): Promise<FeatureType<TProviders, KFeature> & FullDisposable> {
         if (provider === undefined) {
             // Get the default
             provider = this.environment.defaultProviders[feature] as KProvider;
@@ -115,14 +139,18 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
             });
         }
 
+        const loadedConfig = this.configFeature === feature || skipConfig ? {} : await this.config() || {};
+
         // Initialize provider
-        const loadedProviderConfig = await this.environment.providerConfig(this, provider, feature);
-        const providerConfig = this.combineProviderConfig(loadedProviderConfig, suppliedProviderConfig);
+        const loadedProviderConfig = loadedConfig.provider?.[provider];
+        const environmentProviderConfig = !loadedProviderConfig && await this.environment.providerConfig(this, provider, feature);
+        const providerConfig = this.combineProviderConfig(loadedProviderConfig || environmentProviderConfig, suppliedProviderConfig);
         const prov = await this.providerContext.load(provider, providerConfig, this);
 
         // Initialize feature
-        const featureConfig = await this.environment.featureConfig(this, provider, feature);
-        const combined = this.combineFeatureConfig(featureConfig, config);
+        const loadedFeatureConfig = loadedConfig.feature?.[feature];
+        const environmentFeatureConfig = !loadedFeatureConfig && await this.environment.featureConfig(this, provider, feature);
+        const combined = this.combineFeatureConfig(loadedFeatureConfig || environmentFeatureConfig, config);
         const feat = await prov.loadFeature(this, feature, combined);
 
         const dispose = () => {
