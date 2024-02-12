@@ -24,11 +24,6 @@ export class ProviderContext<TProviders extends Providers, TServices extends Ser
         return this.environmentContext.providers;
     }
 
-    /** Alias for environmentContext.services */
-    get service() {
-        return this.environmentContext.serviceContext?.services || {};
-    }
-
     /* c8 ignore end */
 
     /** Creates a new provider context which will be used to manage loading and caching of providers */

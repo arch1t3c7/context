@@ -8,7 +8,10 @@ type ProviderMap = {
     bar: () => Promise<Provider<{ foo: () => Promise<any> }>>;
 }
 
-class TestEnvironmentContext extends EnvironmentContext<ProviderMap> {
+class TestEnvironmentContext extends EnvironmentContext<ProviderMap, void> {
+    protected createServices(featureContext: FeatureContext<ProviderMap, void, void>): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
     load = jest.fn();
     module = jest.fn();
     asyncModule = jest.fn(() => Promise.resolve()) as any;
@@ -99,12 +102,12 @@ describe(`FeatureContext`, () => {
                 expect(typeof instance.feature.foo).toBe(`function`);
             });
 
-            it(`should call the load function with the feature name`, () => {
+            it(`should call the load function with the feature name`, async () => {
                 instance.load = jest.fn();
                 const featureConfig = Symbol(`feature-config`);
                 const providerConfig = Symbol(`provider-config`);
 
-                instance.feature.foo(featureConfig as any, `bar`, providerConfig as any);
+                await instance.feature.foo(featureConfig as any, `bar`, providerConfig as any);
 
                 expect(instance.load).toBeCalledWith(`foo`, featureConfig, `bar`, providerConfig);
             })

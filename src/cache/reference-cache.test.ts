@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from '@jest/globals';
 import { ReferenceCache } from './reference-cache.js';
 import { CachePolicy } from './policy/cache-policy.js';
 import { Cachable, CacheItem } from './cache-item.js';
+import { Deferred } from '../util/deferred.js';
 
 class TestPolicy extends CachePolicy<string, void> {
     items: CacheItem<string, any>[] = [];
@@ -13,27 +14,6 @@ class TestPolicy extends CachePolicy<string, void> {
     onHit = jest.fn();
     onRelease = jest.fn();
     dispose = jest.fn();
-}
-
-class Deferred<TResult = void, TError = Error> {
-    promise: Promise<TResult>;
-    #resolve?: (result: TResult) => void;
-    #reject?: (error: TError) => void;
-
-    get resolve() {
-        return this.#resolve!;
-    }
-
-    get reject() {
-        return this.#reject!;
-    }
-
-    constructor() {
-        this.promise = new Promise<TResult>((res, rej) => {
-            this.#resolve = res;
-            this.#reject = rej;
-        })
-    }
 }
 
 describe(`ReferenceCache`, () => {

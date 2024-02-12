@@ -3,7 +3,7 @@ import type { Union } from 'ts-toolbelt';
 import type { FeatureContext } from './feature-context.js';
 import type { Provider } from './provider.js';
 import type { Service } from './service.js';
-import type { ServiceContext } from './service-context.js';
+import { EnvironmentContext } from './environment-context.js';
 
 type UnionToIntersection<U> =
     (U extends any ? (k: U) => void : never) extends
@@ -53,6 +53,18 @@ export type Features<TProviders extends Providers> = {
         never
 }
 
+export type ServiceFeatures<TProviders extends Providers> = {
+    [KFeature in StringKeys<Features<TProviders>>]: FeatureType<TProviders, KFeature> extends Service<any, any, any> ?
+        Features<TProviders>[KFeature] :
+        never
+}
+
+export type ConfigFeatures<TProviders extends Providers> = {
+    [KFeature in StringKeys<Features<TProviders>>]: FeatureType<TProviders, KFeature> extends ProviderConfig<TProviders> ?
+        Features<TProviders>[KFeature] :
+        never
+}
+
 /** A utility type to get the config type of a feature */
 export type FeatureTypeConfig<TProviders extends Providers, KFeature extends StringKeys<Features<TProviders>>> = Parameters<Features<TProviders>[KFeature]>[0];
 
@@ -64,7 +76,7 @@ export type FeatureConfig<TProviders extends Providers> = {
     [KFeature in StringKeys<Features<TProviders>>]: FeatureTypeConfig<TProviders, KFeature>;
 }
 
-/** THe feature shortcut functions */
+/** The feature shortcut functions */
 export type FeatureShortcuts<TProviders extends Providers> = {
     [KFeature in StringKeys<Features<TProviders>>]: <TProvider extends StringKeys<TProviders>>(
         config?: FeatureTypeConfig<TProviders, KFeature>,
@@ -73,26 +85,34 @@ export type FeatureShortcuts<TProviders extends Providers> = {
     ) => Promise<FullDisposable & FeatureType<TProviders, KFeature>> & AsyncDisposable
 }
 
+/** The service shortcut functions */
+export type ServiceShortcuts<TProviders extends Providers> = {
+    [KFeature in StringKeys<ServiceFeatures<TProviders>>]: <TProvider extends StringKeys<TProviders>>(
+        config?: FeatureTypeConfig<TProviders, KFeature>,
+        provider?: TProvider,
+        providerConfig?: ProviderTypeConfig<TProviders, TProvider>
+    ) => Promise<FullDisposable & FeatureType<TProviders, KFeature>> & AsyncDisposable
+}
+
 /** The providers config structure derived from the providers factory collection */
-export type ProviderConfig<TProviders extends Providers, TServices extends Services | void> = {
+export type ProviderConfig<TProviders extends Providers> = {
     feature?: FeatureConfig<TProviders>;
     provider?: {
         [K in StringKeys<TProviders>]: Parameters<TProviders[K]>[1]
     };
-    service?: TServices extends Services ? {
-        [K in StringKeys<TServices>]: TServices[K][`config`]
-    } : undefined;
 }
 
 /** Provides a way to tie together providers and the default config */
 export type DefaultProviders<TProviders extends Providers> = Partial<Record<StringKeys<Features<TProviders>>, StringKeys<TProviders>>>;
 
 export type ServiceEventHandler<TEventContext, TEvents = never> = (this: Service<TEventContext, TEvents, any>, context?: TEventContext) => void;
-export type ServiceContextEventHandler<TServices extends Services, TEventContext> = (this: ServiceContext<TServices, TEventContext>, service: StringKeys<TServices>, context?: TEventContext) => void;
+export type EnvironmentContextEventHandler<TProviders extends Providers, TServices extends Services | void, TEventContext> = TServices extends Services ?
+    (this: EnvironmentContext<TProviders, TServices, TEventContext>, service: StringKeys<TServices>, context?: TEventContext) => void :
+    never;
 
 export type AnyFunc = (...args: any[]) => any;
 
-export type FullDisposable = Disposable & {
+export type FullDisposable = Disposable & AsyncDisposable & {
     dispose: () => void | Promise<void>;
 }
 

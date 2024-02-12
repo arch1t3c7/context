@@ -3,12 +3,16 @@ import { ProviderContext } from './provider-context.js';
 import { EnvironmentContext } from './environment-context.js';
 import { Cachable } from './cache/cache-item.js';
 import { Provider } from './provider.js';
+import { FeatureContext } from './feature-context.js';
 
 type ProviderMap = {
     bar: () => Promise<Provider<{ foo: () => Promise<any> }>>;
 }
 
-class TestContext extends EnvironmentContext<ProviderMap> {
+class TestContext extends EnvironmentContext<ProviderMap, void> {
+    protected createServices(featureContext: FeatureContext<ProviderMap, void, void>): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
     module = jest.fn();
     asyncModule = jest.fn(() => Promise.resolve()) as any;
 }

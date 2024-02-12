@@ -1,14 +1,14 @@
 import merge from 'lodash.merge';
 import { ProviderContext } from './provider-context.js';
-import type { FullDisposable, Providers, FeatureShortcuts, StringKeys, Features, FeatureType, ProviderTypeConfig, Services } from './type.js';
+import type { FullDisposable, Providers, FeatureShortcuts, StringKeys, Features, FeatureType, ProviderTypeConfig, Services, ServiceShortcuts, ServiceFeatures, ConfigFeatures } from './type.js';
 import { UserError } from './error/user.js';
-
-const ASYNC_DISPOSE = Symbol(`async-dispose`);
+import { Service } from './service.js';
 
 export class FeatureContext<TProviders extends Providers, TServices extends Services | void = void, TEventContext = void> {
     providerContext: ProviderContext<TProviders, TServices, TEventContext>;
 
     feature: FeatureShortcuts<TProviders>;
+    service: ServiceShortcuts<TProviders>;
 
     /* c8 ignore start */
     get environment() {
@@ -18,34 +18,36 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
     get providers() {
         return this.providerContext.provider;
     }
-
-    get services() {
-        return this.providerContext.service;
-    }
     /* c8 ignore end */
 
     constructor(providerContext: ProviderContext<TProviders, TServices, TEventContext>) {
         this.providerContext = providerContext;
 
-        const self = this;
-        this.feature = new Proxy<FeatureShortcuts<TProviders>>({} as FeatureShortcuts<TProviders>, {
-            get(_, feature: StringKeys<Features<TProviders>>) {
-                /* c8 ignore start */
-                if (typeof feature !== `string`) {
-                    return undefined;
+        type LoadHandler = typeof this.load;
+        this.feature = buildProxy((...args: Parameters<typeof this.load>) => this.load(...args));
+        this.service = buildProxy((...args: Parameters<typeof this.load>) => this.loadService(...args));
+
+        function buildProxy<TShortcuts extends FeatureShortcuts<TProviders>>(handler: LoadHandler) {
+            return new Proxy<TShortcuts>({} as TShortcuts, {
+                get(_, item: StringKeys<TShortcuts>) {
+                    /* c8 ignore start */
+                    if (typeof item !== `string`) {
+                        return undefined;
+                    }
+                    /* c8 ignore end */
+                    return function <KProvider extends StringKeys<TProviders> = StringKeys<TProviders>>(
+                        config: unknown,
+                        provider?: KProvider,
+                        providerConfig?: KProvider extends StringKeys<TProviders> ?
+                            ProviderTypeConfig<TProviders, KProvider> :
+                            never,
+                    ) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        return handler(item as any, config, provider, provider ? providerConfig : undefined);
+                    };
                 }
-                /* c8 ignore end */
-                return function <KProvider extends StringKeys<TProviders> = StringKeys<TProviders>>(
-                    config: unknown,
-                    provider?: KProvider,
-                    providerConfig?: KProvider extends StringKeys<TProviders> ?
-                        ProviderTypeConfig<TProviders, KProvider> :
-                        never,
-                ) {
-                    return self.load(feature, config, provider, provider ? providerConfig : undefined);
-                };
-            }
-        });
+            });
+        }
     }
 
     protected combineProviderConfig<TObject, TSource>(config1: TObject, config2: TSource) {
@@ -56,44 +58,48 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
         return merge({}, config1, config2);
     }
 
-    load<KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
-        feature: KFeature,
+    async loadService<KFeature extends StringKeys<ServiceFeatures<TProviders>>, KProvider extends StringKeys<TProviders>>(
+        service: KFeature,
         config: unknown,
         provider?: KProvider,
-        suppliedProviderConfig?: KProvider extends StringKeys<TProviders> ?
-            ProviderTypeConfig<TProviders, KProvider> :
-            never,            
-    ): Promise<FeatureType<TProviders, KFeature>> & AsyncDisposable {
-        const prom = this.#load(feature, config, provider, suppliedProviderConfig);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const disposableProm: (typeof prom & AsyncDisposable) = prom as any;
-        let loadedFeature: Awaited<typeof prom> | undefined;
-        prom.then(
-            (feat) => { loadedFeature = feat },
-            // This style can lead to false inhandled rejections, so we make sure we don't get any
-            () => undefined,
-        );
-
-        disposableProm[Symbol.asyncDispose] = async () => {
-            if (loadedFeature === undefined) {
-                return;
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return (loadedFeature as any)[ASYNC_DISPOSE]();
-        };
-
-        return disposableProm;
-    }
-
-    async #load<KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
-        feature: KFeature,
-        config: unknown,
-        provider?: KProvider,
-        suppliedProviderConfig?: KProvider extends StringKeys<TProviders> ?
+        providerConfig?: KProvider extends StringKeys<TProviders> ?
             ProviderTypeConfig<TProviders, KProvider> :
             never,            
     ): Promise<FeatureType<TProviders, KFeature> & FullDisposable> {
+        const feat = await this.load(service, config, provider, providerConfig);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((feat as any) instanceof Service === false) {
+            // Make sure we cleanup
+            await feat.dispose();
+
+            // TODO: This may make testing tough
+            throw new UserError(`The supplied feature "${service}" exists but is not a service`);
+        }
+
+        return feat;
+    }
+
+    async loadConfig<KFeature extends StringKeys<ConfigFeatures<TProviders>>, KProvider extends StringKeys<TProviders>>(
+        feature: KFeature,
+        config: unknown,
+        provider?: KProvider,
+        providerConfig?: KProvider extends StringKeys<TProviders> ?
+            ProviderTypeConfig<TProviders, KProvider> :
+            never,            
+    ): Promise<FeatureType<TProviders, KFeature> & FullDisposable> {
+        const feat = await this.load(feature, config, provider, providerConfig);
+        return feat;
+    }
+
+    load = async <KFeature extends StringKeys<Features<TProviders>>, KProvider extends StringKeys<TProviders>>(
+        feature: KFeature,
+        config: unknown,
+        provider?: KProvider,
+        suppliedProviderConfig?: KProvider extends StringKeys<TProviders> ?
+            ProviderTypeConfig<TProviders, KProvider> :
+            never,            
+    ): Promise<FeatureType<TProviders, KFeature> & FullDisposable> => {
         if (provider === undefined) {
             // Get the default
             provider = this.environment.defaultProviders[feature] as KProvider;
@@ -146,7 +152,7 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
             ...feat,
             dispose,
             [Symbol.dispose]: syncDispose,
-            [ASYNC_DISPOSE]: asyncDispose,
+            [Symbol.asyncDispose]: asyncDispose,
         };        
     }
 }

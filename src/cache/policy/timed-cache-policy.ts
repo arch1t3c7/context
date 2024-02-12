@@ -39,9 +39,6 @@ export class TimedCachePolicy<TKey> extends CachePolicy<TKey, TimedCachePolicyCo
     }
 
     #onHeld(item: CacheItem<TKey, Cachable<TKey>>) {
-        // TODO: The issue is we have a cache item raising the event
-        //  and using this as context... but we need this to call #clear
-
         // Reset any timers if anything grabs the item
         this.#clear(item);
     }
