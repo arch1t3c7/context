@@ -7,6 +7,9 @@ export enum ServiceEvent {
     event = `event`,
 }
 
+// TODO: Think we should re-order these....
+//  Also thing event context should have a default of void
+
 export class Service<TEventContext, TEvents = never, TConfig = void> extends EventEmitter<ServiceEvent | TEvents, ServiceEventHandler<TEventContext>> {
     readonly name: string;
 

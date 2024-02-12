@@ -5,7 +5,7 @@ import { ProviderContext } from './provider-context.js';
 import { Provider } from './provider.js';
 
 type ProviderMap = {
-    bar: () => Promise<Provider<{ foo: () => Promise<any> }>>;
+    bar: () => Promise<Provider<{ foo: () => Promise<any>, baz: () => Promise<any> }>>;
 }
 
 class TestEnvironmentContext extends EnvironmentContext<ProviderMap, void> {
@@ -42,21 +42,33 @@ describe(`FeatureContext`, () => {
         };
         feature: {
             foo: undefined;
+            baz: undefined;
         }
     };
 
-    let fooFeature: {};
+    let fooFeature: {
+        feature?: {
+            foo: undefined,
+        },
+        provider?: {
+            bar: undefined,
+        }
+    };
+    let bazFeature: typeof fooFeature;
     let features: {
-        foo: () => Promise<typeof fooFeature>
+        foo: () => Promise<typeof fooFeature>,
+        baz: () => Promise<typeof fooFeature>,
     };
     let barProvider: Provider<typeof features>;
     let providers: ProviderMap;
 
     beforeEach(() => {
         fooFeature = {};
+        bazFeature = {};
         barProvider = {
             feature: {
-                foo: () => Promise.resolve(fooFeature)
+                foo: () => Promise.resolve(fooFeature),
+                baz: () => Promise.resolve(bazFeature),
             }
         } as Provider<typeof features>;
 
@@ -66,6 +78,7 @@ describe(`FeatureContext`, () => {
             },
             feature: {
                 foo: undefined,
+                baz: undefined,
             }
         };
 
@@ -100,6 +113,47 @@ describe(`FeatureContext`, () => {
         describe(`feature`, () => {
             it(`should add feature loaders for all feature names on providers to the feature property`, () => {
                 expect(typeof instance.feature.foo).toBe(`function`);
+            });
+
+            it(`should call the load function with the feature name`, async () => {
+                instance.load = jest.fn();
+                const featureConfig = Symbol(`feature-config`);
+                const providerConfig = Symbol(`provider-config`);
+
+                await instance.feature.foo(featureConfig as any, `bar`, providerConfig as any);
+
+                expect(instance.load).toBeCalledWith(`foo`, featureConfig, `bar`, providerConfig);
+            })
+        });
+
+        describe(`config`, () => {
+            it(`should be a function`, () => {
+                expect(typeof instance.config).toBe(`function`);
+            });
+
+            it(`should use the context.configFeature to determine the feature when no feature is supplied`, async () => {
+                instance.load = jest.fn();
+                instance.configFeature = `foo`;
+
+                await instance.config();
+
+                expect(instance.load).toBeCalledWith(`foo`, undefined)
+            });
+
+            it(`should use the supplied feature to load the config`, async () => {
+                instance.load = jest.fn();
+                instance.configFeature = `foo`;
+
+                await instance.config(`baz`);
+
+                expect(instance.load).toBeCalledWith(`baz`, undefined)
+            });
+
+            it(`should return undefined if no feature is defined`, async () => {
+                instance.load = jest.fn();
+                instance.configFeature = `foo`;
+
+                expect(await instance.config(`something else` as any)).toBe(undefined);
             });
 
             it(`should call the load function with the feature name`, async () => {

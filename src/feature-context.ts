@@ -9,6 +9,7 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
 
     feature: FeatureShortcuts<TProviders>;
     service: ServiceShortcuts<TProviders>;
+    configFeature?: StringKeys<ConfigFeatures<TProviders>>;
 
     /* c8 ignore start */
     get environment() {
@@ -20,8 +21,9 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
     }
     /* c8 ignore end */
 
-    constructor(providerContext: ProviderContext<TProviders, TServices, TEventContext>) {
+    constructor(providerContext: ProviderContext<TProviders, TServices, TEventContext>, configFeature?: FeatureContext<TProviders, TServices, TEventContext>[`configFeature`]) {
         this.providerContext = providerContext;
+        this.configFeature = configFeature;
 
         type LoadHandler = typeof this.load;
         this.feature = buildProxy((...args: Parameters<typeof this.load>) => this.load(...args));
@@ -48,6 +50,17 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
                 }
             });
         }
+    }
+
+    /** A shortcut to load the defined config feature and return it */
+    async config(configFeature?: FeatureContext<TProviders, TServices, TEventContext>[`configFeature`]) {
+        configFeature = configFeature || this.configFeature;
+        if (configFeature === undefined) {
+            return undefined;
+        }
+
+        const config = await this.load(configFeature, undefined);
+        return config;
     }
 
     protected combineProviderConfig<TObject, TSource>(config1: TObject, config2: TSource) {
@@ -77,18 +90,6 @@ export class FeatureContext<TProviders extends Providers, TServices extends Serv
             throw new UserError(`The supplied feature "${service}" exists but is not a service`);
         }
 
-        return feat;
-    }
-
-    async loadConfig<KFeature extends StringKeys<ConfigFeatures<TProviders>>, KProvider extends StringKeys<TProviders>>(
-        feature: KFeature,
-        config: unknown,
-        provider?: KProvider,
-        providerConfig?: KProvider extends StringKeys<TProviders> ?
-            ProviderTypeConfig<TProviders, KProvider> :
-            never,            
-    ): Promise<FeatureType<TProviders, KFeature> & FullDisposable> {
-        const feat = await this.load(feature, config, provider, providerConfig);
         return feat;
     }
 
