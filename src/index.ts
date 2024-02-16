@@ -11,10 +11,11 @@ export {
     LruCachePolicy,
     TimedCachePolicy
 } from './cache/index.js';
-export type {
-    Providers,
-    ProviderFeatures,
-    ProviderConfig,
-    DefaultProviders,
-    Services,
-} from './type.js';
+// export type {
+//     Providers,
+//     ProviderFeatures,
+//     ProviderConfig,
+//     DefaultProviders,
+//     Services,
+// } from './type.js';
+export type * from './type.js';
