@@ -1,6 +1,6 @@
 {
     "name": "@arch/context",
-    "version": "0.0.17",
+    "version": "0.0.18",
     "main": "dist/src/index.js",
     "type": "module",
     "exports": "./src/index.ts",
