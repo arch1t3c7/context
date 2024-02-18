@@ -37,7 +37,7 @@ jobs:
       - name: Build
         run: npm run build
       - name: Add scope
-      - run: npm run addscope
+        run: npm run addscope
       - name: Publish to GitHub Packages
         run: npm publish
         env:
