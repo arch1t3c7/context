@@ -1,5 +1,5 @@
 {
-    "name": "@arch/provider",
+    "name": "@arch/context",
     "version": "0.0.14",
     "main": "dist/index.js",
     "type": "module",
