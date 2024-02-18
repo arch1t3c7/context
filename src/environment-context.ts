@@ -75,12 +75,12 @@ export class EnvironmentContext<
         return undefined;
     }
 
-    protected async createServices(featureContext: FeatureContext<TProviders>): Promise<TServices | undefined> {
+    protected async createServices(featureContext: FeatureContext<TProviders, TServices, TEventContext>): Promise<TServices | undefined> {
         return undefined;
     }
 
     /** Starts all services defined by createServices */
-    async start(featureContext: FeatureContext<TProviders>) {
+    async start(featureContext: FeatureContext<TProviders, TServices, TEventContext>) {
         if (this.started) {
             throw new ProgramError(`Start has already been called`);
         }
