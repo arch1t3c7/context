@@ -104,7 +104,8 @@
     },
     "exclude": [
         "**/*.test.ts",
-        "dist/"
+        "dist/",
+        "examples/"
     ],
     "ts-node": {
         "esm": true,
