@@ -1,6 +1,6 @@
 {
     "name": "@arch1t3c7/context",
-    "version": "0.0.23",
+    "version": "0.0.24",
     "main": "dist/src/index.js",
     "type": "module",
     "exports": "./dist/src/index.js",
