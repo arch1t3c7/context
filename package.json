@@ -1,14 +1,14 @@
 {
-    "name": "@arch/context",
+    "name": "@arch1t3c7/context",
     "version": "0.0.18",
     "main": "dist/src/index.js",
     "type": "module",
     "exports": "./src/index.ts",
     "publishConfig": {
         "exports": {
-            ".": "./dist/index.js"
+            ".": "./dist/src/index.js"
         },
-        "types": "./dist/index.d.ts"
+        "types": "./dist/src/index.d.ts"
     },
     "author": {
         "name": "Calvin Mann",
