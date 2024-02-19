@@ -22,7 +22,9 @@
     },
     "dependencies": {
         "lodash.merge": "^4.6.2",
-        "object-hash": "^3.0.0"
+        "object-hash": "^3.0.0",
+        "@types/lodash.merge": "^4.6.9",
+        "@types/object-hash": "^3.0.6"
     },
     "devDependencies": {
         "@babel/core": "^7.23.9",
@@ -30,8 +32,6 @@
         "@babel/preset-typescript": "^7.23.3",
         "@jest/globals": "^29.7.0",
         "@types/jest": "^29.5.12",
-        "@types/lodash.merge": "^4.6.9",
-        "@types/object-hash": "^3.0.6",
         "@typescript-eslint/eslint-plugin": "^6.20.0",
         "@typescript-eslint/parser": "^6.20.0",
         "ansi-escapes": "^6.2.0",
