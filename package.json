@@ -3,13 +3,8 @@
     "version": "0.0.23",
     "main": "dist/src/index.js",
     "type": "module",
-    "exports": "./src/index.ts",
-    "publishConfig": {
-        "exports": {
-            ".": "./dist/src/index.js"
-        },
-        "types": "./dist/src/index.d.ts"
-    },
+    "exports": "./dist/src/index.js",
+    "types": "./dist/src/index.d.ts",
     "author": {
         "name": "Calvin Mann",
         "email": "calvinmann@gmail.com"
@@ -21,10 +16,10 @@
         "lint": "eslint ."
     },
     "dependencies": {
-        "lodash.merge": "^4.6.2",
-        "object-hash": "^3.0.0",
         "@types/lodash.merge": "^4.6.9",
-        "@types/object-hash": "^3.0.6"
+        "@types/object-hash": "^3.0.6",
+        "lodash.merge": "^4.6.2",
+        "object-hash": "^3.0.0"
     },
     "devDependencies": {
         "@babel/core": "^7.23.9",
